@@ -414,14 +414,14 @@ def getStateForPerm(stateList, stateName):
 
     # Handle case where the report from RUSA does not include a state name.
     if 0 == len(stateName):
-        raise "ERROR. stateName is empty."
+        raise RuntimeError("ERROR. stateName is empty.")
 
     for state in stateList:
         if state.containsState(stateName):
             sop(5,m,"Exit. Returning state.")
             return state
 
-    raise m + " Error: Could not find state for stateName=%s" ( stateName )
+    raise RuntimeError(m + " Error: Could not find state for stateName=%s" ( stateName ))
 
 def getPermCityState(permRecord):
     """Returns a string with the 'location' of the perm.

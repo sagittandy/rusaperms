@@ -43,7 +43,7 @@ class CSVRecord:
             # Create an empty dictionary.
             self.recordDictionary = {}
         else:
-            raise m + " Error. Unexpected value for listType. listType=%s" % ( listType )
+            raise RuntimeError(m + " Error. Unexpected value for listType. listType=%s" % ( listType ))
         sop(5,m,"Exit.")
 
     def toString(self):
@@ -60,7 +60,7 @@ class CSVRecord:
         # Escape!  Replace any commas within double-quoted strings with tildes.
         escapeChar = "~"
         if -1 != csvLine.find(escapeChar):
-            raise "Program error: Can not use escape char '%s'. csvLine=%s" % ( escapeChar, csvLine )
+            raise RuntimeError("Program error: Can not use escape char '%s'. csvLine=%s" % ( escapeChar, csvLine ))
 
         i = 0
         escaped = False
@@ -95,7 +95,8 @@ class CSVRecord:
             
         sop(5,m,"csvList=%s" % ( repr(csvList) ))
         if len(columnNameList) != len(csvList):
-            raise "Error. Unexpected number of elements in CSV line. expected=%i actual=%i" % ( len(columnNameList), len(csvList) )
+            print "csvList: ", csvList
+            raise RuntimeError("Error. Unexpected number of elements in CSV line. expected=%i actual=%i" % ( len(columnNameList), len(csvList) ))
         self.recordDictionary = {}
         i = 0
         for columnName in columnNameList:
@@ -110,7 +111,9 @@ class CSVRecord:
 
         # Bozo check.
         if len(columnNameList) != len(recordList):
-            raise "Error. Unexpected number of elements. len(recordList)=%i len(columnNameList)=%i" % ( len(recordList), len(columnNameList) )
+            raise RuntimeError(
+                "Error. Unexpected number of elements. len(recordList)=%i len(columnNameList)=%i"
+                % ( len(recordList), len(columnNameList) ))
 
         # Store all values in the dictionary.
         self.recordDictionary = {}
@@ -137,7 +140,7 @@ class CSVRecord:
         m = "CSVRecord/put:"
         sop(9,m,"Entry. columnName=%s columnValue=%s" % ( columnName, columnValue ))
         if not columnName in self.recordDictionary.keys():
-            raise "Error. ColumnName does not exist in dictionary." % ( columnName )
+            raise RuntimeError( "Error. ColumnName does not exist in dictionary." % ( columnName ))
         else:
             self.recordDictionary[columnName] = columnValue
         sop(9,m,"Exit. set value %s to %s." % ( columnName,columnValue ))
@@ -149,7 +152,7 @@ class CSVRecord:
         m = "CSVRecord/appendValue:"
         sop(9,m,"Entry. columnName=%s appendValue=%s" % ( columnName, appendValue ))
         if not columnName in self.recordDictionary.keys():
-            raise "Error. ColumnName does not exist in dictionary." % ( columnName )
+            raise RuntimeError( "Error. ColumnName does not exist in dictionary." % ( columnName ))
         else:
             oldValue = self.recordDictionary[columnName]
             if oldValue.startswith('"') and oldValue.endswith('"'):
@@ -273,11 +276,11 @@ class CSVFile:
 
         # Verify the file has been read once, and internal variables are initialized.
         if "yes" != self.initialized:
-            raise m + " Error: File has not been read and internal variables initialized."
+            raise RuntimeError( m + " Error: File has not been read and internal variables initialized.")
 
         # Weak bozo check
         if len(recordList) != len(self.columnNameList):
-            raise m + " Error: Unexpected number of elements. len(recordList)=%i len(columnNameList)=%i" % ( len(recordList), len(columnNameList) )
+            raise RuntimeError(m + " Error: Unexpected number of elements. len(recordList)=%i len(columnNameList)=%i" % ( len(recordList), len(columnNameList) ))
 
         # Create an object for the record.
         csvRecord = CSVRecord("LIST",recordList,self.columnNameList)
@@ -288,7 +291,7 @@ class CSVFile:
         # Ensure the element is not already in the file and database.
         # Note: This is a weak mechanism to avoid duplicates in the file.  :-(
         if self.exists(recordValue):
-            raise m + " Error: Element already exists in database and file. recordValue=%s" % ( recordValue )
+            raise RuntimeError(m + " Error: Element already exists in database and file. recordValue=%s" % ( recordValue ))
 
         # Save the record object to the local dictionary.
         sop(5,m,"Saving record as %s" % ( recordValue ))
@@ -313,7 +316,7 @@ class CSVFile:
 
         # Bozo check.
         if 0 == len(recordString):
-            raise m + " Error. recordString is empty."
+            raise RuntimeError( m + " Error. recordString is empty.")
 
         # End-of-line
         recordString = recordString + '\n'

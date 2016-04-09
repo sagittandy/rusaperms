@@ -140,6 +140,9 @@ class GetLatLon:
        sop(5,m,"geocodeURL=%s" % ( geocodeURL ))
 
        # Fetch
+       # (MY mod:  sleep 0.15 seconds for rate limiting)
+       sop(5,m,"Sleeping to stay within rate limits")
+       time.sleep(0.15) # Google rate limit is 2500 per day or 10 per second
        sop(5,m,"Issuing request.")
        try:
            httpConnection = httplib.HTTPConnection(geocodeHostname)
@@ -158,7 +161,7 @@ class GetLatLon:
            # Close the connection.
            httpConnection.close()
        except:
-           raise m + " ERROR: Could not fetch lat/lon from Google Geocode API for address %s" % ( address )
+           raise RuntimeError(m + " ERROR: Could not fetch lat/lon from Google Geocode API for address %s" % ( address ))
 
        sop(5,m,"Exit. Returning responseJSON.")
        return responseJSON
@@ -199,7 +202,7 @@ class GetLatLon:
         statusString = jsonObject["status"]
         #sop(5,m,"statusString=%s" % ( statusString ))
         if "OK" != statusString:
-            raise m + " Error: Status is not OK. Status=%s" % ( statusString )
+            raise RuntimeError(m + " Error: Status is not OK. Status=%s" % ( statusString ))
 
         # Extract the results list, which is expected to contain one element.
         resultsList = jsonObject["results"]
