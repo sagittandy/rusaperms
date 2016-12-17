@@ -71,9 +71,12 @@ marker_group_template ="""
            {{ 
               title: "{title}",
               alt: "{title}",
-              icon: {icon}
+              icon: {icon},
+              count: {count}
            }}
-            ).bindPopup("<div>{desc}</div>");
+            ).bindPopup("<div><p>{title}</p>" +
+                        "<p>{desc}</p>" +
+                        "</div>");
       markers.addLayer(marker);
 """
 
@@ -81,7 +84,7 @@ def perm_in_group(record):
     notes = record["Perm_notes"]
     if len(notes) > 0:
         notes = " ({})".format(notes)
-    desc = ("<p><a href={href}>{title}</a> {owner} {notes} </p>"
+    desc = ("<br /><a href={href}>{title}</a> {owner} {notes}"
           .format(title=html.escape(record["Perm_name"]),
                   owner=record["Perm_owner"],
                   href=record["Href"],
@@ -99,14 +102,17 @@ def emit_group(group, output):
     longitude = group[0]["Lon"]
     dist_group = group[0]["Dist_group"]
     icon = "icon{}".format(dist_group)
+    count = len(group)
+    city = group[0]["City"]
     title = "{} {}k permanents from {}".format(
-        len(group), dist_group, group[0]["City"])
+        count, dist_group, city)
     desc = ""
     for record in group:
         desc += perm_in_group(record)
     js = (marker_group_template
           .format(latitude=latitude,
                   longitude=longitude,
+                  count=count, 
                   icon=icon,
                   title=title, 
                   desc=desc))
@@ -117,7 +123,8 @@ marker_template_individual ="""
            {{ 
               title: "{title}",
               alt: "{title}",
-              icon: {icon}
+              icon: {icon},
+              count: 1
            }}
             ).bindPopup("<div><p>{owner}</p>" +
                   "<p><a href={href}>{title}</a></p>" +
