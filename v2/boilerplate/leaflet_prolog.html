@@ -21,6 +21,42 @@
 	<script
         src="https://unpkg.com/leaflet.markercluster@1.0.0/dist//leaflet.markercluster-src.js">
         </script>
+
+       <script>
+
+       function countPerms (cluster) {
+                var children = cluster.getAllChildMarkers();
+                var count = 0;
+                children.forEach( function( child ) {
+                    if (child.options.hasOwnProperty('count')) {
+                        count += child.options.count;
+                    } else {
+                        console.log(child);
+                        count += 1;
+                    }});
+                return count;
+       }
+       function customIcon (cluster) {
+		//var childCount = cluster.getChildCount();
+                var childCount = countPerms(cluster);
+
+		var c = ' marker-cluster-';
+		if (childCount < 5) {
+			c += 'small';
+		} else if (childCount < 20) {
+			c += 'medium';
+		} else {
+			c += 'large';
+		}
+
+		return new L.DivIcon(
+                    {  html: '<div><span>' + childCount + '</span></div>',
+		       className: 'marker-cluster' + c, iconSize: new
+                       L.Point(40, 40)
+		       });
+	}
+       </script>
+
 <style>
 body {
     padding: 0;
@@ -53,7 +89,7 @@ html, body, #mapid {
 		id: 'mapbox.streets'
 	}).addTo(mymap);
 
-       	var markers = L.markerClusterGroup();
+       	var markers = L.markerClusterGroup({ iconCreateFunction: customIcon });
 
         L.MakiMarkers.accessToken = "pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw";
 
