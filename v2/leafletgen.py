@@ -1,6 +1,11 @@
 """
 Generate html from CSV file of RUSA perms.
 
+We assume the input CSV file is sorted by location and then distance.
+The snarf step ensures sorting by location.  Documentation doesn't
+say anything about sorting by distance, but this seems to be its behavior.
+If this changes in the future, we may need to impose a sorting-and-bucketing
+step. 
 """
 import schemata
 import sys
@@ -10,103 +15,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 # Boilerplate before and after the part we generate 
-prolog="""<!DOCTYPE html>
-<html>
-<head>
-	
-	<title>RUSA Permanents</title>
 
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.2/dist/leaflet.css" />
-	<script
-	src="https://unpkg.com/leaflet@1.0.2/dist/leaflet.js"></script>
-
-        <script src="lib/Leaflet.MakiMarkers.js"></script>
-
-        <!-- Marker clustering -->
-	<link rel="stylesheet"
-        href="https://unpkg.com/leaflet.markercluster@1.0.0/dist//MarkerCluster.css" />
-	<link rel="stylesheet"
-        href="https://unpkg.com/leaflet.markercluster@1.0.0/dist//MarkerCluster.Default.css" />
-	<script
-        src="https://unpkg.com/leaflet.markercluster@1.0.0/dist//leaflet.markercluster-src.js">
-        </script>
-<style>
-body {
-    padding: 0;
-    margin: 0;
-}
-html, body, #mapid {
-    height: 100%;
-}
-.rider-icon { background-color: #00cc00;
-               color: #ff0000;
-               width: auto; }
-         }
-</style>
-</head>
-<body>
-
-
-
-
-<div id="mapid"></div>
-<script>
-
-	var mymap = L.map('mapid').setView([37.7749, -122.4194], 5);
-
-	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw', {
-		maxZoom: 18,
-		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-			'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-			'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-		id: 'mapbox.streets'
-	}).addTo(mymap);
-
-       	var markers = L.markerClusterGroup();
-
-        L.MakiMarkers.accessToken = "pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw";
-
-
-       var icon100 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#F0FF32",
-                                         size: "m"});
-
-       var icon200 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#8CD978",
-                                         size: "m"});
-
-       var icon300 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#64FEFF",
-                                         size: "m"});
-
-       var icon400 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#757EFF",
-                                         size: "m"});
-
-       var icon600 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#FD8F73",
-                                         size: "m"});
-
-       var icon1000 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#FC5655",
-                                         size: "m"});
-
-       var icon1200 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#D930FF",
-                                         size: "m"});
-
-"""
-
-postlog ="""
-     mymap.addLayer(markers);
-    
-</script>
-</body>
-</html>
-"""
 
 #
 # The part we generate looks like
@@ -156,6 +65,16 @@ def marker(record):
     return js
                                 
     
+def copy_to_output(path, output):
+    """
+    Copy the boilerplate files without change.
+    Path is a string, output is an open file. 
+    """
+    with open(path, 'r') as input:
+        for line in input:
+            print(line, file=output, end="")
+    
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="Generate html from geocoded perms")
@@ -169,18 +88,17 @@ def main():
                          nargs='?', default=0)
     args = parser.parse_args()
     reader = csv.DictReader(args.input)
-    print(prolog, file=args.output)
-    # sep = ""
+
+    copy_to_output("boilerplate/leaflet_prolog.html", args.output)
     count = 0
     for record in reader:
-        # print(sep, file=args.output)
         print(marker(record), file=args.output, end="")
-        # sep=","
         count += 1
         if args.limit and count >= args.limit:
             logger.info("Cutting off at {} permanents".format(count))
             break
-    print(postlog, file=args.output)
+    copy_to_output("boilerplate/leaflet_postlog.html", args.output)
+
 
 if __name__ == "__main__":
     main()
