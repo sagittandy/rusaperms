@@ -9,6 +9,9 @@ rusa_snarf = ["State", "City", "Perm_km", "Perm_climb", "Href",
 # As decorated by add_latlon.py
 geolocated = rusa_snarf + ["Lat", "Lon"]
 
+# With further decoration, sorted into buckets
+bucketed = geolocated.append("bucket")
+
 # Location database (manual and from Google)
 # Note place is City, State  (different from RUSA DB)
 #

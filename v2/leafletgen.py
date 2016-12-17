@@ -27,7 +27,92 @@ logging.basicConfig(level=logging.INFO)
        #      ).bindPopup("here's my popup").addTo(mymap);
 
 
-marker_template="""
+
+
+def distance_group(record):
+    """Rather than group exact distances, we'll group
+       by distance class.
+    """
+    perm_dist = int(record["Perm_km"])
+    for distance in [1200, 1000, 600, 400, 300, 200, 100]:
+        if perm_dist >= distance:
+            return distance
+    return 100
+
+# Control break logic --- we'll keep a list of records and
+# produce a summary pin when location or distance bucket changes
+group = [ ]
+prior = [ ]
+
+def accumulate(record, output):
+    """
+    Control break logic:  Adds current record to
+    the current group, after potentially dumping and
+    restarting the current group.
+    """
+    global group
+    global prior
+    dist_group = distance_group(record)
+    record["Dist_group"] = dist_group
+    grouping = [ record["Lat"], record["Lon"], dist_group ]
+    if grouping != prior:
+        flush(output)
+        prior = grouping
+    group.append(record)
+
+def flush(output):
+    global group
+    emit_group(group, output)
+    group = [ ]
+
+
+marker_group_template ="""
+       var marker = L.marker([{latitude}, {longitude}],
+           {{ 
+              title: "{title}",
+              alt: "{title}",
+              icon: {icon}
+           }}
+            ).bindPopup("<div>{desc}</div>");
+      markers.addLayer(marker);
+"""
+
+def perm_in_group(record):
+    notes = record["Perm_notes"]
+    if len(notes) > 0:
+        notes = " ({})".format(notes)
+    desc = ("<p><a href={href}>{title}</a> {owner} {notes} </p>"
+          .format(title=html.escape(record["Perm_name"]),
+                  owner=record["Perm_owner"],
+                  href=record["Href"],
+                  notes=record["Perm_notes"]))
+    return desc
+
+def emit_group(group, output): 
+    logging.debug("Emitting group: {}".format(group))
+    if len(group) == 0:
+        return
+    if len(group) == 1:
+        emit_marker(group[0], output)
+        return
+    latitude = group[0]["Lat"]
+    longitude = group[0]["Lon"]
+    dist_group = group[0]["Dist_group"]
+    icon = "icon{}".format(dist_group)
+    title = "{} {}k permanents from {}".format(
+        len(group), dist_group, group[0]["City"])
+    desc = ""
+    for record in group:
+        desc += perm_in_group(record)
+    js = (marker_group_template
+          .format(latitude=latitude,
+                  longitude=longitude,
+                  icon=icon,
+                  title=title, 
+                  desc=desc))
+    print(js, file=output)
+
+marker_template_individual ="""
        var marker = L.marker([{latitude}, {longitude}],
            {{ 
               title: "{title}",
@@ -42,7 +127,7 @@ marker_template="""
       markers.addLayer(marker);
 """
 
-def marker(record):
+def emit_marker(record, output):
     """
     For convenience we take the record as a dict.
     """
@@ -54,15 +139,16 @@ def marker(record):
             icon = "icon{}".format(distance)
             break
 
-    js = marker_template.format(latitude=record["Lat"],
-                                longitude=record["Lon"],
-                                icon=icon,
-                                title=html.escape(record["Perm_name"]),
-                                owner=record["Perm_owner"],
-                                dist=record["Perm_km"], 
-                                href=record["Href"],
-                                notes=record["Perm_notes"])
-    return js
+    js = (marker_template_individual
+          .format(latitude=record["Lat"],
+                  longitude=record["Lon"],
+                  icon=icon,
+                  title=html.escape(record["Perm_name"]),
+                  owner=record["Perm_owner"],
+                  dist=record["Perm_km"], 
+                  href=record["Href"],
+                  notes=record["Perm_notes"]))
+    print(js, file=output)
                                 
     
 def copy_to_output(path, output):
@@ -92,11 +178,12 @@ def main():
     copy_to_output("boilerplate/leaflet_prolog.html", args.output)
     count = 0
     for record in reader:
-        print(marker(record), file=args.output, end="")
+        accumulate(record, args.output)
         count += 1
         if args.limit and count >= args.limit:
             logger.info("Cutting off at {} permanents".format(count))
             break
+    flush(args.output)
     copy_to_output("boilerplate/leaflet_postlog.html", args.output)
 
 
