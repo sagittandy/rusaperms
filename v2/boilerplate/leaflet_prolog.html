@@ -79,7 +79,7 @@ html, body, #mapid {
 <div id="mapid"></div>
 <script>
 
-	var mymap = L.map('mapid').setView([37.7749, -122.4194], 5);
+	var mymap = L.map('mapid').setView([37.0172494,-97.1836641], 4);
 
 	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw', {
 		maxZoom: 18,
@@ -89,7 +89,10 @@ html, body, #mapid {
 		id: 'mapbox.streets'
 	}).addTo(mymap);
 
-       	var markers = L.markerClusterGroup({ iconCreateFunction: customIcon });
+       	var markers = L.markerClusterGroup(
+                { iconCreateFunction: customIcon,
+                  disableClusteringAtZoom: 17
+                });
 
         L.MakiMarkers.accessToken = "pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw";
 

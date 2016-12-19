@@ -112,7 +112,7 @@ class Parser(HTMLParser):
         href= "http://www.rusa.org" + href
         state, city = perm_loc.split(": ")
         row = [ state, city, perm_km, perm_climb, href, perm_name,
-                perm_owner, perm_notes ]
+                perm_owner, perm_notes, perm_states ]
         
         # produce_line(row, file=self.destfile)
         self.csvwriter.writerow(row)

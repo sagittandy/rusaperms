@@ -74,8 +74,8 @@ marker_group_template ="""
               icon: {icon},
               count: {count}
            }}
-            ).bindPopup("<div><p>{title}</p>" +
-                        "<p>{desc}</p>" +
+            ).bindPopup("<div><p>{title}<br />" +
+                        "{desc}</p>" +
                         "</div>");
       markers.addLayer(marker);
 """
@@ -84,7 +84,7 @@ def perm_in_group(record):
     notes = record["Perm_notes"]
     if len(notes) > 0:
         notes = " ({})".format(notes)
-    desc = ("<br /><a href={href}>{title}</a> {owner} {notes}"
+    desc = ("<a href={href}>{title}</a> {owner} {notes}<br />"
           .format(title=html.escape(record["Perm_name"]),
                   owner=record["Perm_owner"],
                   href=record["Href"],

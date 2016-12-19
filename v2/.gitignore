@@ -1,0 +1,5 @@
+# Ignore these ... 
+decorated.csv
+html/rusa-multi.html
+html/*perm*.html
+env
