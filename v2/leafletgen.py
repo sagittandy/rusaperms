@@ -34,10 +34,12 @@ def distance_group(record):
        by distance class.
     """
     perm_dist = int(record["Perm_km"])
+    next_bigger = "up"
     for distance in [1200, 1000, 600, 400, 300, 200, 100]:
         if perm_dist >= distance:
-            return distance
-    return 100
+            return distance, next_bigger
+        next_bigger = distance - 1
+    return distance, next_bigger
 
 # Control break logic --- we'll keep a list of records and
 # produce a summary pin when location or distance bucket changes
@@ -52,8 +54,9 @@ def accumulate(record, output):
     """
     global group
     global prior
-    dist_group = distance_group(record)
+    dist_group, next_bigger = distance_group(record)
     record["Dist_group"] = dist_group
+    record["Next_bigger"] = next_bigger
     grouping = [ record["Lat"], record["Lon"], dist_group ]
     if grouping != prior:
         flush(output)
@@ -80,14 +83,20 @@ marker_group_template ="""
       markers.addLayer(marker);
 """
 
+perm_template_grouped = (
+           "#{Perm_id} " +
+           "<a href='http://www.rusa.org/cgi-bin/permview_GF.pl?permid={Perm_id}'" +
+           " target='RUSAdb'>{title}</a> {notes}- {owner}<br />")
+                        
+
 def perm_in_group(record):
     notes = record["Perm_notes"]
     if len(notes) > 0:
         notes = " ({})".format(notes)
-    desc = ("<a href={href}>{title}</a> {owner} {notes}<br />"
-          .format(title=html.escape(record["Perm_name"]),
+    desc = (perm_template_grouped
+            .format(title=html.escape(record["Perm_name"]),
                   owner=record["Perm_owner"],
-                  href=record["Href"],
+                  Perm_id=record["Perm_id"],
                   notes=record["Perm_notes"]))
     return desc
 
@@ -101,11 +110,12 @@ def emit_group(group, output):
     latitude = group[0]["Lat"]
     longitude = group[0]["Lon"]
     dist_group = group[0]["Dist_group"]
+    next_bigger = group[0]["Next_bigger"]
     icon = "icon{}".format(dist_group)
     count = len(group)
     city = group[0]["City"]
-    title = "{} {}k permanents from {}".format(
-        count, dist_group, city)
+    title = "{}  {}k-{}k permanents from {}".format(
+        count, dist_group, next_bigger, city)
     desc = ""
     for record in group:
         desc += perm_in_group(record)
@@ -126,11 +136,14 @@ marker_template_individual ="""
               icon: {icon},
               count: 1
            }}
-            ).bindPopup("<div><p>{owner}</p>" +
-                  "<p><a href={href}>{title}</a></p>" +
-                  "<p>{dist}km</p>" + 
-                  "<p>{notes}</p>" +
-                  "</div>");
+            ).bindPopup("<div><p>" +
+            "#{Perm_id} " +
+            "<a href='http://www.rusa.org/cgi-bin/permview_GF.pl?permid={Perm_id}'" +
+            " target='RUSAdb'>" +             
+                  " {title}</a><br />" +
+                  " {dist}km<br />" + 
+                  " {notes}<br />" +
+                  " {owner}</p></div>");
       markers.addLayer(marker);
 """
 
@@ -153,7 +166,7 @@ def emit_marker(record, output):
                   title=html.escape(record["Perm_name"]),
                   owner=record["Perm_owner"],
                   dist=record["Perm_km"], 
-                  href=record["Href"],
+                  Perm_id= record["Perm_id"], 
                   notes=record["Perm_notes"]))
     print(js, file=output)
                                 

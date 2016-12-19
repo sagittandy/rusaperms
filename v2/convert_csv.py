@@ -20,7 +20,6 @@ import schemata
 schema_in = schemata.rusa_report
 schema_out = schemata.rusa_snarf
 
-href_template = "http://www.rusa.org/cgi-bin/permview_GF.pl?permid={}"
 
 def process(record, output):
     """
@@ -33,20 +32,20 @@ def process(record, output):
     if not record["Active?"]:
         return
     outrow = { }
-    outrow["Href"] = href_template.format(record["Route #"])
-    outrow["State"] = record["Start State"]
-    outrow["City"] = record["Start City"]
+    outrow["Perm_id"] = record["Route #"]
+    outrow["State"] = record["Start State"].strip()
+    outrow["City"] = record["Start City"].strip()
     outrow["Perm_km"] = record["Distance"]
     name_parts = record["Route name"].split(":")
-    outrow["Perm_name"] = name_parts[1]
+    outrow["Perm_name"] = name_parts[1].strip()
     outrow["Perm_owner"] = record["Owner Name"]
-    outrow["Perm_notes"] = extract_notes(record)
+    outrow["Perm_notes"] = extract_notes(record).strip()
     outrow["Perm_states"] = record["Within State(s)"]
     output.writerow(outrow)
     ## Also the reversed route? 
     if record["Type"] == "PP" and record["Reversible?"] == "Y":
-        outrow["State"] = record["End State"]
-        outrow["City"] = record["End City"]
+        outrow["State"] = record["End State"].strip()
+        outrow["City"] = record["End City"].strip()
         outrow["Perm_notes"] = extract_notes(record, reverse=True)
         output.writerow(outrow)
 

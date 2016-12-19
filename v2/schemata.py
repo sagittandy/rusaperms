@@ -10,7 +10,7 @@ rusa_report = ["Route #", "Route name", "Owner Name",
                "Description" ]
 
 # As produced by snarf.py:
-rusa_snarf = ["State", "City", "Perm_km",  "Href",
+rusa_snarf = ["State", "City", "Perm_km",  "Perm_id",
               "Perm_name",  "Perm_owner", "Perm_notes", "Perm_states" ]
 
 # As decorated by add_latlon.py
