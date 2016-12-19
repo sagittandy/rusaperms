@@ -1,5 +1,6 @@
 # Ignore these ... 
-decorated.csv
+__pycache__
+CONFIG.py
 html/rusa-multi.html
 html/*perm*.html
 env
