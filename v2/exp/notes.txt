@@ -1,0 +1,15 @@
+The following is not working: 
+
+curl -v -0 -k -c cookies -F x='' -F login=5475 -F password="Mock Turtle" -F submit="log in"  https://rusa.org/cgi-bin/login_PF.pl
+
+
+
+
+
+-0 is to try http version 1.0; didn't help
+-v is for debugging; I can see where it gets stuck, 
+  before sending the whole data
+  
+-k is for insecure connection, because rusa.org 
+doesn't have all their certificates in order. 
+
