@@ -1,0 +1,7 @@
+# Ignore these ... 
+__pycache__
+CONFIG.py
+html/rusa-multi.html
+html/*perm*.html
+data/permroutereport.csv
+env
