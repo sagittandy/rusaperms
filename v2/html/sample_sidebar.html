@@ -7,6 +7,11 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+        <!-- JQuery -->
+       <script
+       src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js">
+       </script>
+
         <!-- Leaflet --> 
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.2/dist/leaflet.css" />
 	<script
@@ -101,11 +106,26 @@ html, body, #mapid {
                     RUSA Permanents
                     <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
                 </h1>
-	      <p>Put the selection stuff here.</p>
+	      <p>Show permanents of length ...</p>
+	      <form>
+	        <input type="checkbox" class="length_select" id="br1000" checked>
+	           1000k - 1199k</input><br />
+	        <input type="checkbox" class="length_select" id="br1200" checked>
+	           1200k - 1399k</input><br />
+	        <input type="checkbox" class="length_select" id="br1400" checked>
+	           1400k+</input><br />
+	      </form>
             </div> <!-- Sidebar pane -->
         </div> <!-- sidebar-content --> 
 </div> <!-- sidebar -->
-
+<script>
+$(document).ready(function() {
+  $('input[class="length_select"]').change(
+     function() {
+        console.log("Caught change");
+     })
+  });
+</script>
 
 
 <!-- *******************************************
