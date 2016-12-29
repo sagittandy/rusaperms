@@ -1,6 +1,9 @@
 """
 Generate html from CSV file of RUSA perms.
 
+Experimental version --- using jinja2 to get some variability
+in the boilerplate.
+
 We assume the input CSV file is sorted by location and then distance.
 The snarf step ensures sorting by location.  Documentation doesn't
 say anything about sorting by distance, but this seems to be its behavior.
@@ -14,6 +17,8 @@ import html
 import logging
 logging.basicConfig(level=logging.INFO)
 
+import jinja2
+
 # Boilerplate before and after the part we generate 
 
 
@@ -21,11 +26,22 @@ logging.basicConfig(level=logging.INFO)
 # The part we generate looks like
 #
 
-       # var marker = L.marker([44.7748, -117.8343],
-       #      title="Baker City Grand Flop",
-       #      alt="Baker City Grand Flap"
-       #      ).bindPopup("here's my popup").addTo(mymap);
-
+      #  var marker = L.marker([47.57, -122.6525],
+      #      { 
+      #         title: "Seattle to Crater Lake via Oregon  Coast",
+      #         alt: "Seattle to Crater Lake via Oregon  Coast",
+      #         icon: icon1000,
+      #         count: 1
+      #      }
+      #       ).bindPopup("<div><p>" +
+      #       "#816 " +
+      #       "<a href='http://www.rusa.org/cgi-bin/permview_GF.pl?permid=816'" +
+      #       " target='RUSAdb'>" +             
+      #             " Seattle to Crater Lake via Oregon  Coast</a><br />" +
+      #             " 1014km<br />" + 
+      #             " To Klamath Falls, OR<br />" +
+      #             " Geoff Swarts</p></div>");
+      # groups.br1200.push(marker);
 
 
 
@@ -74,13 +90,13 @@ marker_group_template ="""
            {{ 
               title: "{title}",
               alt: "{title}",
-              icon: {icon},
+              icon: icon{dist_group},
               count: {count}
            }}
             ).bindPopup("<div><p>{title}<br />" +
                         "{desc}</p>" +
                         "</div>");
-      markers.addLayer(marker);
+      groups.br{dist_group}.push(marker);
 """
 
 perm_template_grouped = (
@@ -111,7 +127,6 @@ def emit_group(group, output):
     longitude = group[0]["Lon"]
     dist_group = group[0]["Dist_group"]
     next_bigger = group[0]["Next_bigger"]
-    icon = "icon{}".format(dist_group)
     count = len(group)
     city = group[0]["City"]
     title = "{}  {}k-{}k permanents from {}".format(
@@ -123,7 +138,7 @@ def emit_group(group, output):
           .format(latitude=latitude,
                   longitude=longitude,
                   count=count, 
-                  icon=icon,
+                  dist_group=dist_group,
                   title=title, 
                   desc=desc))
     print(js, file=output)
@@ -133,7 +148,7 @@ marker_template_individual ="""
            {{ 
               title: "{title}",
               alt: "{title}",
-              icon: {icon},
+              icon: icon{dist_group},
               count: 1
            }}
             ).bindPopup("<div><p>" +
@@ -144,7 +159,7 @@ marker_template_individual ="""
                   " {dist}km<br />" + 
                   " {notes}<br />" +
                   " {owner}</p></div>");
-      markers.addLayer(marker);
+      groups.br{dist_group}.push(marker);
 """
 
 def emit_marker(record, output):
@@ -153,16 +168,10 @@ def emit_marker(record, output):
     """
     logging.debug("Formatting record {}".format(record))
     perm_dist = int(record["Perm_km"])
-    icon = "icon100" # as default
-    for distance in [1200, 1000, 600, 400, 300, 200, 100]:
-        if perm_dist >= distance:
-            icon = "icon{}".format(distance)
-            break
-
     js = (marker_template_individual
           .format(latitude=record["Lat"],
                   longitude=record["Lon"],
-                  icon=icon,
+                  dist_group=record["Dist_group"], 
                   title=html.escape(record["Perm_name"]),
                   owner=record["Perm_owner"],
                   dist=record["Perm_km"], 
@@ -179,7 +188,23 @@ def copy_to_output(path, output):
     with open(path, 'r') as input:
         for line in input:
             print(line, file=output, end="")
-    
+
+def init_templates( path="boilerplate" ):
+    """
+    Prepare to fill templates with Jinja2
+    """
+    global template_env
+    template_loader = jinja2.FileSystemLoader( searchpath="boilerplate" )
+    template_env = jinja2.Environment( loader=template_loader )
+
+def render_template( template_name, vars, output ):
+    """
+    Example render_template("template.hmtl", { "name": "foo" }, sys.stdout)
+    """
+    template = template_env.get_template( template_name )
+    output_text = template.render( vars )
+    print(output_text, file=output)
+
 
 def main():
     import argparse
@@ -195,7 +220,9 @@ def main():
     args = parser.parse_args()
     reader = csv.DictReader(args.input)
 
-    copy_to_output("boilerplate/leaflet_prolog.html", args.output)
+    init_templates()
+    render_template("leaflet_sidebar_prolog.html", { }, args.output)
+
     count = 0
     for record in reader:
         accumulate(record, args.output)
@@ -204,7 +231,10 @@ def main():
             logger.info("Cutting off at {} permanents".format(count))
             break
     flush(args.output)
-    copy_to_output("boilerplate/leaflet_postlog.html", args.output)
+
+    render_template("leaflet_sidebar_postlog.html",
+                    { },
+                    args.output)
 
 
 if __name__ == "__main__":
