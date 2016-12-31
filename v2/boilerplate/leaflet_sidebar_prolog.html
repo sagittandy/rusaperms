@@ -2,7 +2,7 @@
 <html>
 <head>
 	
-	<title>RUSA Permanents</title>
+	<title>{{title}}</title>
 
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,13 +29,17 @@
         src="https://unpkg.com/leaflet.markercluster@1.0.0/dist//leaflet.markercluster-src.js">
         </script>
 
-       <!-- Sidebar -->
-       <link rel="stylesheet" href="lib/leaflet-sidebar.min.css" />
+      <!-- Font-Awesome is currently used only in the sidebar,
+           but that could change. -->
       <link
        href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css"
       rel="stylesheet">
-      <script src="lib/leaflet-sidebar.min.js"></script>
 
+       {% if sidebar %}
+       <!-- Sidebar -->
+       <link rel="stylesheet" href="lib/leaflet-sidebar.min.css" />
+      <script src="lib/leaflet-sidebar.min.js"></script>
+      {% endif %}
 
        <script>
 
@@ -81,17 +85,19 @@ html, body, #mapid {
     height: 100%;
     font: 12pt "Helvetica Neue", Arial, Helvetica, sans-serif;
 }
+#sidebar {		    
+   height: 40ex;
+}		   
 
 </style>
 </head>
 <body>
 
+{% if sidebar %}
 <!-- The sidebar, followed by the map itself -->
 <!-- *******************************************
      ******************************************* -->
-<div id="sidebar" class="sidebar collapsed"
-  style="height: 40ex;"
-  >
+<div id="sidebar" class="sidebar collapsed">
 
         <!-- Nav tabs -->
         <div class="sidebar-tabs">
@@ -126,11 +132,24 @@ html, body, #mapid {
 	        <input type="checkbox" class="length_select" id="br1200" checked>
 	           1200k + </input><br />
 	      </form>
+
+	      <p><a href="{{sidebar_link_href}}">{{sidebar_link_name}}</a></p>
             </div> <!-- Sidebar pane -->
         </div> <!-- sidebar-content --> 
 </div> <!-- sidebar -->
+{% endif %}
+
+<!-- We keep the groups of markers whether or not there is a sidebar,
+     so that code declaring a marker is the same either way.
+     The installMarkers function varies between installing all groups
+     or installing groups that correspond to marked options.
+-->
 <script>
 var groups = {
+  // For iterating through the groups ... 
+  lengths: [ 'br100', 'br200', 'br300', 'br400',
+             'br600', 'br1000', 'br1200' ], 
+  // Each marker is added to one group when it is created 
   br100 : [ ],
   br200 : [ ],
   br300 : [ ],
@@ -146,6 +165,9 @@ var markers = L.markerClusterGroup(
                   disableClusteringAtZoom: 17
                 });
 
+{% if sidebar %}
+// Just the markers that have been selected in the
+// sidebar, which initially is all of them
 function installMarkers() {
            var options = $(".length_select");
            for (var i=0; i<options.length; ++i) {
@@ -156,6 +178,20 @@ function installMarkers() {
 	     }
 	   }
 }
+{% else %}
+// Markers of every length, since we don't have
+// selections. 	     
+function installMarkers() {
+           for (var i=0; i<groups.lengths.length; ++i) {
+	        group = groups.lengths[i]; 
+	        // console.log("Adding " + group);
+	        // console.log("group content " + groups[group]); 
+	        markers.addLayers(groups[group]);
+	     }
+}
+{% endif %}	     
+
+	     
 
 $(document).ready(function() {
   $('input[class="length_select"]').change(

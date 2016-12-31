@@ -11,13 +11,17 @@ If this changes in the future, we may need to impose a sorting-and-bucketing
 step. 
 """
 import schemata
+import jinja2
+import configparser
+
 import sys
 import csv
 import html 
 import logging
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-import jinja2
+
 
 # Boilerplate before and after the part we generate 
 
@@ -205,6 +209,45 @@ def render_template( template_name, vars, output ):
     output_text = template.render( vars )
     print(output_text, file=output)
 
+# def config_options(config_file_path, version_group):
+#     """ "
+#     Loads up a dictionary with configuration options that we can use
+#     in Jinja2 template expansion
+#     """
+#     config = configparser.ConfigParser()
+#     config.read(config_file_path)
+#     group = config[version_group]
+#     env = {
+#       'title': group['Page Title'],
+#       'sidebar': group.getboolean('Sidebar'),
+#       'sidebar_link_map_href': group['Sidebar link href'],
+#       'sidebar_link_name': group['Sidebar link name']
+#       }
+#     return env
+
+def config_options(config_file_path, version_group):
+    """ 
+    Loads up a dictionary with configuration options that we can use
+    in Jinja2 template expansion
+    """
+    translations = { "True": True, "False": False,
+                     "true": True, "false": False,
+                     "yes": True, "no": False,
+                     "Yes": True, "No": False }
+    config = configparser.ConfigParser()
+    config.read(config_file_path)
+    group = config[version_group]
+    env = { }
+    for key in group:
+        if group[key] in translations:
+            logger.debug("Translating {}".format(key))
+            env[key] = translations[group[key]]
+        else:
+            logger.debug("Not translating |{}|".format(key))
+            env[key] = group[key]
+    logger.debug("Environment: {}".format(env))
+    return env
+
 
 def main():
     import argparse
@@ -217,11 +260,16 @@ def main():
                         nargs="?", default=sys.stdout)
     parser.add_argument('--limit', type=int, help="Produce only a few entries",
                          nargs='?', default=0)
+    parser.add_argument('--config',
+                        help="Options group from leafletmaps.config", 
+                        default="DEFAULT")
     args = parser.parse_args()
-    reader = csv.DictReader(args.input)
+    env = config_options('leafletmaps.config', args.config)
+    logger.info("Configuration options: {}".format(env))
 
+    reader = csv.DictReader(args.input)
     init_templates()
-    render_template("leaflet_sidebar_prolog.html", { }, args.output)
+    render_template("leaflet_sidebar_prolog.html", env, args.output)
 
     count = 0
     for record in reader:
@@ -233,7 +281,7 @@ def main():
     flush(args.output)
 
     render_template("leaflet_sidebar_postlog.html",
-                    { },
+                    env,
                     args.output)
 
 

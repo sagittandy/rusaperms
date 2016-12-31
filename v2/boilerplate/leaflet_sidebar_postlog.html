@@ -3,7 +3,9 @@
      map.addLayer(markers);
      installMarkers();  
 
+    {% if sidebar %}
     var sidebar = L.control.sidebar('sidebar').addTo(map);
+    {% endif %}
 </script>
 </body>
 </html>
