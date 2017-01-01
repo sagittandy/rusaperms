@@ -5,7 +5,6 @@ the CSV format we'll use for mapping.
 Besides selecting and renaming columns, the
 transformations are:
 
-* HREF field is formed from the route number
 * Inactive routes are omitted
 * If a route is reversible AND point-to-point,
   it is duplicated with from and two locations
@@ -60,7 +59,7 @@ def extract_notes(record, reverse=False):
             notes += "(Reversed) to {}, {}".format(
                 record["Start City"], record["Start State"])
         else:
-            notes += "To {}, {}".format(
+            notes += "to {}, {}".format(
                 record["End City"], record["End State"])
         sep = "; "
     if record["Free-route?"] == "yes":

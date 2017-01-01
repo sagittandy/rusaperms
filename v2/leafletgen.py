@@ -23,32 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 
-# Boilerplate before and after the part we generate 
-
-
-#
-# The part we generate looks like
-#
-
-      #  var marker = L.marker([47.57, -122.6525],
-      #      { 
-      #         title: "Seattle to Crater Lake via Oregon  Coast",
-      #         alt: "Seattle to Crater Lake via Oregon  Coast",
-      #         icon: icon1000,
-      #         count: 1
-      #      }
-      #       ).bindPopup("<div><p>" +
-      #       "#816 " +
-      #       "<a href='http://www.rusa.org/cgi-bin/permview_GF.pl?permid=816'" +
-      #       " target='RUSAdb'>" +             
-      #             " Seattle to Crater Lake via Oregon  Coast</a><br />" +
-      #             " 1014km<br />" + 
-      #             " To Klamath Falls, OR<br />" +
-      #             " Geoff Swarts</p></div>");
-      # groups.br1200.push(marker);
-
-
-
 def distance_group(record):
     """Rather than group exact distances, we'll group
        by distance class.
@@ -66,7 +40,10 @@ def distance_group(record):
 group = [ ]
 prior = [ ]
 
-def accumulate(record, output):
+individual_markers = [ ]
+grouped_markers = [ ]
+
+def accumulate(record):
     """
     Control break logic:  Adds current record to
     the current group, after potentially dumping and
@@ -79,110 +56,65 @@ def accumulate(record, output):
     record["Next_bigger"] = next_bigger
     grouping = [ record["Lat"], record["Lon"], dist_group ]
     if grouping != prior:
-        flush(output)
+        flush()
         prior = grouping
     group.append(record)
 
-def flush(output):
+def flush():
     global group
-    emit_group(group, output)
+    emit_group(group)
     group = [ ]
 
 
-marker_group_template ="""
-       var marker = L.marker([{latitude}, {longitude}],
-           {{ 
-              title: "{title}",
-              alt: "{title}",
-              icon: icon{dist_group},
-              count: {count}
-           }}
-            ).bindPopup("<div><p>{title}<br />" +
-                        "{desc}</p>" +
-                        "</div>");
-      groups.br{dist_group}.push(marker);
-"""
+# def emit_group(group, output): 
+#     logging.debug("Emitting group: {}".format(group))
+#     if len(group) == 0:
+#         return
+#     if len(group) == 1:
+#         emit_marker(group[0], output)
+#         return
+#     latitude = group[0]["Lat"]
+#     longitude = group[0]["Lon"]
+#     dist_group = group[0]["Dist_group"]
+#     next_bigger = group[0]["Next_bigger"]
+#     count = len(group)
+#     city = group[0]["City"]
+#     title = "{}  {}k-{}k permanents from {}".format(
+#         count, dist_group, next_bigger, city)
+#     desc = ""
+#     for record in group:
+#         desc += perm_in_group(record)
+#     js = (marker_group_template
+#           .format(latitude=latitude,
+#                   longitude=longitude,
+#                   count=count, 
+#                   dist_group=dist_group,
+#                   title=title, 
+#                   desc=desc))
+#     print(js, file=output)
 
-perm_template_grouped = (
-           "#{Perm_id} " +
-           "<a href='http://www.rusa.org/cgi-bin/permview_GF.pl?permid={Perm_id}'" +
-           " target='RUSAdb'>{title}</a> {notes}- {owner}<br />")
-                        
-
-def perm_in_group(record):
-    notes = record["Perm_notes"]
-    if len(notes) > 0:
-        notes = " ({})".format(notes)
-    desc = (perm_template_grouped
-            .format(title=html.escape(record["Perm_name"]),
-                  owner=record["Perm_owner"],
-                  Perm_id=record["Perm_id"],
-                  notes=record["Perm_notes"]))
-    return desc
-
-def emit_group(group, output): 
+def emit_group(group): 
+    # Group is a list of records
     logging.debug("Emitting group: {}".format(group))
     if len(group) == 0:
         return
     if len(group) == 1:
-        emit_marker(group[0], output)
+        emit_marker(group[0])
         return
-    latitude = group[0]["Lat"]
-    longitude = group[0]["Lon"]
-    dist_group = group[0]["Dist_group"]
-    next_bigger = group[0]["Next_bigger"]
-    count = len(group)
-    city = group[0]["City"]
-    title = "{}  {}k-{}k permanents from {}".format(
-        count, dist_group, next_bigger, city)
-    desc = ""
-    for record in group:
-        desc += perm_in_group(record)
-    js = (marker_group_template
-          .format(latitude=latitude,
-                  longitude=longitude,
-                  count=count, 
-                  dist_group=dist_group,
-                  title=title, 
-                  desc=desc))
-    print(js, file=output)
+    marker_group = group[0].copy()
+    marker_group["count"] = len(group)
+    marker_group["perms"] = group.copy()
+    grouped_markers.append(marker_group)
 
-marker_template_individual ="""
-       var marker = L.marker([{latitude}, {longitude}],
-           {{ 
-              title: "{title}",
-              alt: "{title}",
-              icon: icon{dist_group},
-              count: 1
-           }}
-            ).bindPopup("<div><p>" +
-            "#{Perm_id} " +
-            "<a href='http://www.rusa.org/cgi-bin/permview_GF.pl?permid={Perm_id}'" +
-            " target='RUSAdb'>" +             
-                  " {title}</a><br />" +
-                  " {dist}km<br />" + 
-                  " {notes}<br />" +
-                  " {owner}</p></div>");
-      groups.br{dist_group}.push(marker);
-"""
-
-def emit_marker(record, output):
+def emit_marker(record):
     """
     For convenience we take the record as a dict.
     """
-    logging.debug("Formatting record {}".format(record))
-    perm_dist = int(record["Perm_km"])
-    js = (marker_template_individual
-          .format(latitude=record["Lat"],
-                  longitude=record["Lon"],
-                  dist_group=record["Dist_group"], 
-                  title=html.escape(record["Perm_name"]),
-                  owner=record["Perm_owner"],
-                  dist=record["Perm_km"], 
-                  Perm_id= record["Perm_id"], 
-                  notes=record["Perm_notes"]))
-    print(js, file=output)
-                                
+    logging.debug("Formatting individual record {}".format(record))
+    global individual_markers 
+    marker = record.copy()
+    # logging.debug("Emitting individual marker: {}".format(marker))
+    individual_markers.append(marker)
     
 def copy_to_output(path, output):
     """
@@ -198,8 +130,11 @@ def init_templates( path="boilerplate" ):
     Prepare to fill templates with Jinja2
     """
     global template_env
-    template_loader = jinja2.FileSystemLoader( searchpath="boilerplate" )
-    template_env = jinja2.Environment( loader=template_loader )
+    template_loader = jinja2.FileSystemLoader(searchpath="boilerplate" )
+    template_env = jinja2.Environment(
+        loader=template_loader,
+        lstrip_blocks=True
+        )
 
 def render_template( template_name, vars, output ):
     """
@@ -209,21 +144,6 @@ def render_template( template_name, vars, output ):
     output_text = template.render( vars )
     print(output_text, file=output)
 
-# def config_options(config_file_path, version_group):
-#     """ "
-#     Loads up a dictionary with configuration options that we can use
-#     in Jinja2 template expansion
-#     """
-#     config = configparser.ConfigParser()
-#     config.read(config_file_path)
-#     group = config[version_group]
-#     env = {
-#       'title': group['Page Title'],
-#       'sidebar': group.getboolean('Sidebar'),
-#       'sidebar_link_map_href': group['Sidebar link href'],
-#       'sidebar_link_name': group['Sidebar link name']
-#       }
-#     return env
 
 def config_options(config_file_path, version_group):
     """ 
@@ -269,21 +189,19 @@ def main():
 
     reader = csv.DictReader(args.input)
     init_templates()
-    render_template("leaflet_sidebar_prolog.html", env, args.output)
 
     count = 0
     for record in reader:
-        accumulate(record, args.output)
+        accumulate(record)
         count += 1
         if args.limit and count >= args.limit:
             logger.info("Cutting off at {} permanents".format(count))
             break
-    flush(args.output)
+    flush()
 
-    render_template("leaflet_sidebar_postlog.html",
-                    env,
-                    args.output)
-
+    env["individual_markers"] = individual_markers
+    env["grouped_markers"] = grouped_markers 
+    render_template("leaflet_map.html", env, args.output)
 
 if __name__ == "__main__":
     main()

@@ -2,7 +2,7 @@
 <html>
 <head>
 	
-	<title>{{title}}</title>
+	<title>{{page_title}}</title>
 
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -112,7 +112,7 @@ html, body, #mapid {
         <div class="sidebar-content">
             <div class="sidebar-pane" id="choose">
                 <h1 class="sidebar-header">
-                    RUSA Permanents
+                    {{page_title}}
                     <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
                 </h1>
 	      <p>Show permanents of length ...</p>
@@ -267,3 +267,67 @@ $(document).ready(function() {
 
 //  End of boilerplate prolog; what follows is
 //     inserted marker-by-marker in Python script 
+
+// Now in Jinja!
+
+var permview = "http://www.rusa.org/cgi-bin/permview_GF.pl";
+
+// -------------------
+//  Individual markers 
+// -------------------
+
+{% for marker in individual_markers %}
+var marker = L.marker([{{marker.Lat}}, {{marker.Lon}}],
+  {title: "{{marker.Perm_name |escape}}",
+   alt: "{{marker.Perm_name |escape}}",
+   icon: icon{{marker.Dist_group}},
+   count: 1}).bindPopup(
+   "<div><p> #{{marker.Perm_id}} " +
+   "<a href='" + permview + "?permid={{marker.Perm_id}}'  target='RUSAdb'>" +
+   "{{marker.Perm_name |escape}}</a><br /> {{marker.Perm_km}}km<br /> " + 
+   {% if list_states %}
+     "[{{marker.Perm_states}}] " +
+   {% endif %}
+   "{{marker.Perm_notes |escape}}<br />  {{marker.Perm_owner |escape}}</p></div>");
+groups.br{{marker.Dist_group}}.push(marker);
+{% endfor %}
+
+// -------------------
+//  Grouped markers 
+// -------------------
+
+{% for marker in grouped_markers %}
+var label = "{{marker.count}} "+
+    "{{marker.Dist_group}}k - {{marker.Next_bigger}}k perms from {{marker.City}}";
+var marker = L.marker([{{marker.Lat}}, {{marker.Lon}}],
+ { title: label, 
+   alt: label, 
+   icon: icon{{marker.Dist_group}},
+   count: {{marker.count}}}).bindPopup( "<div>" + label + "<br />" +
+   {% for perm in marker.perms %}  "#{{perm.Perm_id}} " + 
+   " <a href='" + permview + "?permid={{perm.Perm_id}}'" + 
+   "  target='RUSAdb'>{{perm.Perm_name | escape}}</a> " +
+   " ({{perm.Perm_km}}km) " +
+   {% if list_states %}
+     "[{{perm.Perm_states}}] " +
+   {% endif %}
+   " {{perm.Perm_notes | escape}}- {{perm.Perm_owner | escape}} <br />" +
+   {% endfor %} "</div>"   
+  );
+groups.br{{marker.Dist_group}}.push(marker);   
+{% endfor %}
+
+// -------------------
+//  End of markers 
+// -------------------
+
+     map.addLayer(markers);
+     installMarkers();  
+
+    {% if sidebar %}
+    var sidebar = L.control.sidebar('sidebar').addTo(map);
+    {% endif %}
+</script>
+</body>
+</html>
+   
