@@ -21,5 +21,7 @@ Download CSV report of RUSA perms.  You need a RUSA login for this.
 * Click "Generate Report"
 * Save the report in data/permroutereport.csv 
 
+Like this: ![Image of form at rusa.org] (https://github.com/sagittandy/rusaperms/blob/master/v2/graphics/RUSA_form.png)
+
 build.sh generates files in html folder; upload those files to whatever 
 server you are using. 
