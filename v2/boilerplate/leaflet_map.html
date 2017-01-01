@@ -3,6 +3,8 @@
 <head>
 	
 	<title>{{page_title}}</title>
+        <link rel="icon" type="image/png"
+           href="img/bicon.png" />
 
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -87,7 +89,12 @@ html, body, #mapid {
 }
 #sidebar {		    
    height: 40ex;
-}		   
+}
+.ride-group {
+   max-height: 50ex;
+   overflow-y: auto;
+}
+   		    
 
 </style>
 </head>
@@ -220,7 +227,7 @@ $(document).ready(function() {
 <div id="mapid" class="sidebar-map"></div>
 <script>
 
-	var map = L.map('mapid').setView([37.0172494,-97.1836641], 4);
+	var map = L.map('mapid').setView([{{lat}},{{lon}}], {{zoom}});
 
 
 	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw', {
@@ -303,8 +310,8 @@ var marker = L.marker([{{marker.Lat}}, {{marker.Lon}}],
  { title: label, 
    alt: label, 
    icon: icon{{marker.Dist_group}},
-   count: {{marker.count}}}).bindPopup( "<div>" + label + "<br />" +
-   {% for perm in marker.perms %}  "#{{perm.Perm_id}} " + 
+   count: {{marker.count}}}).bindPopup( "<div class='ride-group'>" + label + "<br />" +
+   {% for perm in marker.perms %}  "#<strong>{{perm.Perm_id}}</strong> " + 
    " <a href='" + permview + "?permid={{perm.Perm_id}}'" + 
    "  target='RUSAdb'>{{perm.Perm_name | escape}}</a> " +
    " ({{perm.Perm_km}}km) " +

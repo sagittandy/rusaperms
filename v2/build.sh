@@ -33,3 +33,6 @@ python3 select_minmax.py 600 999 tmp/everywhere.csv \
 
 python3 select_minmax.py 1000 5000 tmp/everywhere.csv \
    | python3 leafletgen.py - html/longperms.html --config long
+
+python3 select_state.py OR tmp/everywhere.csv - \
+   | python3 leafletgen.py - html/oregon.html --config OR 
