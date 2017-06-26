@@ -28,7 +28,10 @@ for row in reader:
     if row[0] == schema[0]:
         writer.writerow(row)
         continue
-    km = int(row[dist_pos])
+    # Distance entry should be like 200 but is sometimes like
+    # 200km or 200k
+    dist_text = row[dist_pos].strip(" km")
+    km = int(dist_text)
     if  km >= args.min_km and km <= args.max_km:
                writer.writerow(row)
 

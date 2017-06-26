@@ -3,5 +3,8 @@ __pycache__
 CONFIG.py
 html/rusa-multi.html
 html/*perm*.html
+html/*state.html
+tmp
 data/permroutereport.csv
+.DS_Store
 env

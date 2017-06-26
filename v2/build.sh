@@ -5,9 +5,7 @@
 # 
 # 
 . env/bin/activate
-# Old: scraping the web site html
-# ./snarf.sh > tmp/raw.html
-# python3 extract.py tmp/raw.html tmp/allperms.csv
+
 # New: from downloaded report in CSV format
 python3 convert_csv.py data/permroutereport.csv | python3 sort_csv.py - tmp/allperms.csv
 python3 add_latlon.py tmp/allperms.csv tmp/everywhere.csv
@@ -34,5 +32,16 @@ python3 select_minmax.py 600 999 tmp/everywhere.csv \
 python3 select_minmax.py 1000 5000 tmp/everywhere.csv \
    | python3 leafletgen.py - html/longperms.html --config long
 
-python3 select_state.py OR tmp/everywhere.csv - \
-   | python3 leafletgen.py - html/oregon.html --config OR 
+
+#
+#  Perms by state (smaller => faster loading on cell phones) 
+# 
+
+for state in AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY \
+             LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NC ND NY \
+             OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY \
+             DC PR
+do
+  python3 select_state.py ${state} tmp/everywhere.csv - \
+     | python3 leafletgen.py - html/${state}state.html --config ${state}
+done

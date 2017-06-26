@@ -27,7 +27,7 @@ def distance_group(record):
     """Rather than group exact distances, we'll group
        by distance class.
     """
-    perm_dist = int(record["Perm_km"])
+    perm_dist = int((record["Perm_km"]).strip(" km"))
     next_bigger = "up"
     for distance in [1200, 1000, 600, 400, 300, 200, 100]:
         if perm_dist >= distance:
