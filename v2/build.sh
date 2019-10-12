@@ -42,6 +42,8 @@ for state in AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY \
              OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY \
              DC PR
 do
+  echo "Generating perms map for ${state}"
   python3 select_state.py ${state} tmp/everywhere.csv - \
-     | python3 leafletgen.py - html/${state}state.html --config ${state}
+      | python3 leafletgen.py - html/${state}state.html --config ${state}
+  echo
 done

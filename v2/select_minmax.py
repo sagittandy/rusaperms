@@ -29,8 +29,8 @@ for row in reader:
         writer.writerow(row)
         continue
     # Distance entry should be like 200 but is sometimes like
-    # 200km or 200k
-    dist_text = row[dist_pos].strip(" km")
+    # 200km or 200k or 200K
+    dist_text = row[dist_pos].strip(" kmK")
     km = int(dist_text)
     if  km >= args.min_km and km <= args.max_km:
                writer.writerow(row)

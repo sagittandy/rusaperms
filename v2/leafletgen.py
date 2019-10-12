@@ -27,7 +27,7 @@ def distance_group(record):
     """Rather than group exact distances, we'll group
        by distance class.
     """
-    perm_dist = int((record["Perm_km"]).strip(" km"))
+    perm_dist = int((record["Perm_km"]).strip(" km").strip("K"))
     next_bigger = "up"
     for distance in [1200, 1000, 600, 400, 300, 200, 100]:
         if perm_dist >= distance:
@@ -185,7 +185,7 @@ def main():
                         default="DEFAULT")
     args = parser.parse_args()
     env = config_options('leafletmaps.config', args.config)
-    logger.info("Configuration options: {}".format(env))
+    logger.debug("Configuration options: {}".format(env))
 
     reader = csv.DictReader(args.input)
     init_templates()
@@ -202,6 +202,7 @@ def main():
     env["individual_markers"] = individual_markers
     env["grouped_markers"] = grouped_markers 
     render_template("leaflet_map.html", env, args.output)
+    logger.info("{} perms generated on {}".format(count, args.output.name))
 
 if __name__ == "__main__":
     main()
