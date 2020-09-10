@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+	
+	<title>{{page_title}}</title>
+        <link rel="icon" type="image/png"
+           href="static/img/bicon.png" />
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <!-- JQuery -->
+       <script
+       src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js">
+       </script>
+
+        <!-- Leaflet --> 
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.2/dist/leaflet.css" />
+	<script
+	src="https://unpkg.com/leaflet@1.0.2/dist/leaflet.js"></script>
+
+        <!-- Maki Marker (marker icons) --> 
+        <script src="static/js/Leaflet.MakiMarkers.js"></script>
+
+        <!-- Marker clustering -->
+	<link rel="stylesheet"
+        href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.css" />
+	<link rel="stylesheet"
+        href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.Default.css" />
+	<script
+        src="https://unpkg.com/leaflet.markercluster@1.3.0/dist/leaflet.markercluster-src.js">
+        </script>
+
+      <!-- Font-Awesome is currently used only in the sidebar,
+           but that could change. -->
+      <link
+       href="https://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css"
+      rel="stylesheet">
+
+       {% if sidebar %}
+       <!-- Sidebar -->
+       <link rel="stylesheet" href="static/css/leaflet-sidebar.min.css" />
+      <script src="static/js/leaflet-sidebar.min.js"></script>
+      {% endif %}
+
+       <script>
+
+       function countPerms (cluster) {
+                var children = cluster.getAllChildMarkers();
+                var count = 0;
+                children.forEach( function( child ) {
+                    if (child.options.hasOwnProperty('count')) {
+                        count += child.options.count;
+                    } else {
+                        console.log(child);
+                        count += 1;
+                    }});
+                return count;
+       }
+       function customIcon (cluster) {
+		//var childCount = cluster.getChildCount();
+                var childCount = countPerms(cluster);
+
+		var c = ' marker-cluster-';
+		if (childCount < 5) {
+			c += 'small';
+		} else if (childCount < 20) {
+			c += 'medium';
+		} else {
+			c += 'large';
+		}
+
+		return new L.DivIcon(
+                    {  html: '<div><span>' + childCount + '</span></div>',
+		       className: 'marker-cluster' + c, iconSize: new
+                       L.Point(40, 40)
+		       });
+	}
+       </script>
+
+<style>
+body {
+    padding: 0;
+    margin: 0;
+}
+html, body, #mapid {
+    height: 100%;
+    font: 12pt "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+#sidebar {		    
+   height: 40ex;
+}
+.ride-group {
+   max-height: 50ex;
+   overflow-y: auto;
+}
+   		    
+
+</style>
+</head>
+<body>
+
+{% if sidebar %}
+<!-- The sidebar, followed by the map itself -->
+<!-- *******************************************
+     ******************************************* -->
+<div id="sidebar" class="sidebar collapsed">
+
+        <!-- Nav tabs -->
+        <div class="sidebar-tabs">
+            <ul role="tablist">
+                <li><a href="#choose" role="tab">
+	      <i class="fa fa-cogs"></i> 
+	      </a></li>
+            </ul>
+        </div> <!-- sidebar-tabs --> 
+
+        <!-- Tab panes -->
+        <div class="sidebar-content">
+            <div class="sidebar-pane" id="choose">
+                <h1 class="sidebar-header">
+                    {{page_title}}
+                    <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+                </h1>
+	      <p>Show permanents of length ...</p>
+	      <form>
+	        <input type="checkbox" class="length_select" id="br100" checked>
+	           100k - 199k</input><br />
+	        <input type="checkbox" class="length_select" id="br200" checked>
+	           200k - 299k</input><br />
+	        <input type="checkbox" class="length_select" id="br300" checked>
+	           300k - 399k</input><br />
+	        <input type="checkbox" class="length_select" id="br400" checked>
+	           400k - 599k</input><br />
+	        <input type="checkbox" class="length_select" id="br600" checked>
+	           600k - 999k</input><br />
+	        <input type="checkbox" class="length_select" id="br1000" checked>
+	           1000k - 1199k</input><br />
+	        <input type="checkbox" class="length_select" id="br1200" checked>
+	           1200k + </input><br />
+	      </form>
+
+	      <p><a href="{{sidebar_link_href}}">{{sidebar_link_name}}</a></p>
+            </div> <!-- Sidebar pane -->
+        </div> <!-- sidebar-content --> 
+</div> <!-- sidebar -->
+{% endif %}
+
+<!-- We keep the groups of markers whether or not there is a sidebar,
+     so that code declaring a marker is the same either way.
+     The installMarkers function varies between installing all groups
+     or installing groups that correspond to marked options.
+-->
+<script>
+var groups = {
+  // For iterating through the groups ... 
+  lengths: [ 'br100', 'br200', 'br300', 'br400',
+             'br600', 'br1000', 'br1200' ], 
+  // Each marker is added to one group when it is created 
+  br100 : [ ],
+  br200 : [ ],
+  br300 : [ ],
+  br400 : [ ],
+  br600 : [ ], 
+  br1000 : [ ], 
+  br1200 : [ ]
+};
+
+
+var markers = L.markerClusterGroup(
+                { iconCreateFunction: customIcon,
+                  disableClusteringAtZoom: 17
+                });
+
+{% if sidebar %}
+// Just the markers that have been selected in the
+// sidebar, which initially is all of them
+function installMarkers() {
+           var options = $(".length_select");
+           for (var i=0; i<options.length; ++i) {
+	     group= options[i].id;
+	     console.log("Adding " + group);
+	     if (options[i].checked) {
+	        markers.addLayers(groups[group]);
+	     }
+	   }
+}
+{% else %}
+// Markers of every length, since we don't have
+// selections. 	     
+function installMarkers() {
+           for (var i=0; i<groups.lengths.length; ++i) {
+	        group = groups.lengths[i]; 
+	        // console.log("Adding " + group);
+	        // console.log("group content " + groups[group]); 
+	        markers.addLayers(groups[group]);
+	     }
+}
+{% endif %}	     
+
+	     
+
+$(document).ready(function() {
+  $('input[class="length_select"]').change(
+     function() {
+        if ($(this).prop("checked")) {
+           var length = $(this).prop("id");
+           markers.addLayers(groups[length])
+           console.log(length + " is checked!");
+       } else {
+           markers.clearLayers(); 
+           installMarkers(); 
+       }
+       markers.refreshClusters(); 
+     })
+  });
+
+
+
+
+</script>
+
+
+
+<!-- *******************************************
+     ******************************************* -->
+<div id="mapid" class="sidebar-map"></div>
+<script>
+
+	var map = L.map('mapid').setView([{{lat}},{{lon}}], {{zoom}});
+
+
+	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw', {
+		maxZoom: 18,
+		attribution: 'Map data &copy;' +
+                        '<a href="http://openstreetmap.org">' + 
+		        'OpenStreetMap</a> contributors, ' +
+			'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+			'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+		id: 'mapbox.streets'
+	}).addTo(map);
+
+
+        L.MakiMarkers.accessToken = "pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw";
+
+
+       var icon100 = L.MakiMarkers.icon({icon: "bicycle",
+                                         color: "#E9FF0E",
+                                         size: "m"});
+
+       var icon200 = L.MakiMarkers.icon({icon: "bicycle",
+                                         color: "#36D610",
+                                         size: "m"});
+
+       var icon300 = L.MakiMarkers.icon({icon: "bicycle",
+                                         color: "#56D6FF",
+                                         size: "m"});
+
+       var icon400 = L.MakiMarkers.icon({icon: "bicycle",
+                                         color: "#757EFF",
+                                         size: "m"});
+
+       var icon600 = L.MakiMarkers.icon({icon: "bicycle",
+                                         color: "#FD8F73",
+                                         size: "m"});
+
+       var icon1000 = L.MakiMarkers.icon({icon: "bicycle",
+                                         color: "#FC5655",
+                                         size: "m"});
+
+       var icon1200 = L.MakiMarkers.icon({icon: "bicycle",
+                                         color: "#D930FF",
+                                         size: "m"});
+
+//  End of boilerplate prolog; what follows is
+//     inserted marker-by-marker in Python script 
+
+// Now in Jinja!
+
+var permview = "http://www.rusa.org/cgi-bin/permview_GF.pl";
+
+// -------------------
+//  Individual markers 
+// -------------------
+
+{% for marker in individual_markers %}
+var marker = L.marker([{{marker.lat}}, {{marker.lon}}],
+  {title: "{{marker.name |escape}}",
+   alt: "{{marker.name |escape}}",
+   icon: icon{{marker.Dist_group}},
+   count: 1}).bindPopup(
+   "<div><p> #{{marker.pid}} " +
+   "<a href='{{marker.url}}'>" +
+   "{{marker.name |escape}}</a><br /> {{marker.dist}}km<br /> " +
+   {% if list_states %}
+     "[{{marker.Perm_states}}] " +
+   {% endif %}
+   "{{marker.description |escape}}</p></div>");
+groups.br{{marker.Dist_group}}.push(marker);
+{% endfor %}
+
+// -------------------
+//  Grouped markers 
+// -------------------
+
+{% for marker in grouped_markers %}
+var label = "{{marker.count}} "+
+    "{{marker.Dist_group}}k - {{marker.Next_bigger}}k perms from {{marker.City}}";
+var marker = L.marker([{{marker.Lat}}, {{marker.Lon}}],
+ { title: label, 
+   alt: label, 
+   icon: icon{{marker.Dist_group}},
+   count: {{marker.count}}}).bindPopup( "<div class='ride-group'>" + label + "<br />" +
+   {% for perm in marker.perms %}  "#<strong>{{perm.Perm_id}}</strong> " + 
+   " <a href='" + permview + "?permid={{perm.Perm_id}}'" + 
+   "  target='RUSAdb'>{{perm.Perm_name | escape}}</a> " +
+   " ({{perm.Perm_km}}km) " +
+   {% if list_states %}
+     "[{{perm.Perm_states}}] " +
+   {% endif %}
+   " {{perm.Perm_notes | escape}}- {{perm.Perm_owner | escape}} <br />" +
+   {% endfor %} "</div>"   
+  );
+groups.br{{marker.Dist_group}}.push(marker);   
+{% endfor %}
+
+// -------------------
+//  End of markers 
+// -------------------
+
+     map.addLayer(markers);
+     installMarkers();  
+
+    {% if sidebar %}
+    var sidebar = L.control.sidebar('sidebar').addTo(map);
+    {% endif %}
+</script>
+</body>
+</html>
+   
