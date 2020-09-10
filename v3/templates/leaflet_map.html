@@ -167,23 +167,23 @@ var groups = {
 };
 
 
-var markers = L.markerClusterGroup(
+var clusters = L.markerClusterGroup(
                 { iconCreateFunction: customIcon,
-                  disableClusteringAtZoom: 17
+                  disableClusteringAtZoom: 15
                 });
 
 {% if sidebar %}
 // Just the markers that have been selected in the
 // sidebar, which initially is all of them
 function installMarkers() {
-           var options = $(".length_select");
-           for (var i=0; i<options.length; ++i) {
-	     group= options[i].id;
-	     console.log("Adding " + group);
-	     if (options[i].checked) {
-	        markers.addLayers(groups[group]);
-	     }
-	   }
+   var options = $(".length_select");
+   for (var i=0; i<options.length; ++i) {
+	 group= options[i].id;
+	 console.log("Adding " + group);
+	 if (options[i].checked) {
+		clusters.addLayers(groups[group]);
+	 }
+   }
 }
 {% else %}
 // Markers of every length, since we don't have
@@ -193,7 +193,7 @@ function installMarkers() {
 	        group = groups.lengths[i]; 
 	        // console.log("Adding " + group);
 	        // console.log("group content " + groups[group]); 
-	        markers.addLayers(groups[group]);
+	        clusters.addLayers(groups[group]);
 	     }
 }
 {% endif %}	     
@@ -205,13 +205,13 @@ $(document).ready(function() {
      function() {
         if ($(this).prop("checked")) {
            var length = $(this).prop("id");
-           markers.addLayers(groups[length])
+           clusters.addLayers(groups[length])
            console.log(length + " is checked!");
        } else {
-           markers.clearLayers(); 
+           clusters.clearLayers();
            installMarkers(); 
        }
-       markers.refreshClusters(); 
+       clusters.refreshClusters();
      })
   });
 
@@ -272,15 +272,42 @@ $(document).ready(function() {
                                          color: "#D930FF",
                                          size: "m"});
 
+       // Current "focused route" so we can highlight and
+	   // and unhighlight them to describe routes
+	   var cur_highlight_route = null;
+	   function highlight_route(route) {
+		   marker = route.marker;
+		   // Un-highlight previous route
+		   if (cur_highlight_route != null) {
+			    cur_highlight_route.setStyle({color: "#6232a8"});
+		   		old_marker = cur_highlight_route.marker;
+		   		console.log("Re-grouping old marker" + old_marker);
+		   		map.removeLayer(old_marker);
+		   		clusters.addLayer(old_marker);
+		   }
+		   // The marker needs to be showing
+			console.log("Ungrouping highlighted marker " + route.marker);
+			clusters.removeLayer(route.marker);
+			map.addLayer(marker);
+			// Now it should be showing
+			marker.openPopup(); // Only if marker showing
+			cur_highlight_route = route;
+			cur_highlight_route.setStyle({color: "#FF0000"});
+	   }
 
-       function plot_route(points, name) {
+       function plot_route(points, marker, name) {
        	 var route = L.polyline(points,
 		            { color: "#6232a8", weight: 3, opacity: 0.5} );
 		              route.on('click',
 		              function(e) {
 		                console.log('clicked on ' + name);
+					    highlight_route(route);
 		              });
 		        route.addTo(map);
+		        // route and marker linked so they can
+		   		// highlight each other
+		   		route.marker = marker;
+		   		marker.route = route;
 	   }
 
 //  End of boilerplate prolog; what follows is
@@ -310,7 +337,7 @@ var marker = L.marker([{{marker.lat}}, {{marker.lon}}],
 groups.br{{marker.Dist_group}}.push(marker);
 // Points associated with that route
 	var points = {{marker.points}};
-	plot_route(points, "{{marker.pid}} {{marker.name}}");
+	plot_route(points, marker, "{{marker.pid}} {{marker.name}}");
 {% endfor %}
 
 // -------------------
@@ -342,7 +369,7 @@ groups.br{{marker.Dist_group}}.push(marker);
 //  End of markers 
 // -------------------
 
-     map.addLayer(markers);
+     map.addLayer(clusters);
      installMarkers();  
 
     {% if sidebar %}
