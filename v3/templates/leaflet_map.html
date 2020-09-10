@@ -272,6 +272,17 @@ $(document).ready(function() {
                                          color: "#D930FF",
                                          size: "m"});
 
+
+       function plot_route(points, name) {
+       	 var route = L.polyline(points,
+		            { color: "#6232a8", weight: 3, opacity: 0.5} );
+		              route.on('click',
+		              function(e) {
+		                console.log('clicked on ' + name);
+		              });
+		        route.addTo(map);
+	   }
+
 //  End of boilerplate prolog; what follows is
 //     inserted marker-by-marker in Python script 
 
@@ -297,6 +308,9 @@ var marker = L.marker([{{marker.lat}}, {{marker.lon}}],
    {% endif %}
    "{{marker.description |escape}}</p></div>");
 groups.br{{marker.Dist_group}}.push(marker);
+// Points associated with that route
+	var points = {{marker.points}};
+	plot_route(points, "{{marker.pid}} {{marker.name}}");
 {% endfor %}
 
 // -------------------

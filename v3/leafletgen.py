@@ -11,7 +11,6 @@ import configparser
 
 import sys
 import csv
-import html 
 import logging
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -82,6 +81,7 @@ def emit_marker(record):
     marker = record.copy()
     # logging.debug("Emitting individual marker: {}".format(marker))
     individual_markers.append(marker)
+
     
 def copy_to_output(path, output):
     """
@@ -135,6 +135,15 @@ def config_options(config_file_path, version_group):
     log.debug("Environment: {}".format(env))
     return env
 
+def append_points(record: dict):
+    """For each route nnnn, there should be a file
+    data/points/nnnn.points that is a (json) list of
+    lat, lon pairs.
+    """
+    pid = record["pid"]
+    with open(f"data/points/{pid}.json") as f:
+        points = f.readline()
+    record["points"] = points
 
 def main():
     import argparse
@@ -163,6 +172,7 @@ def main():
         if not record["lat"]:
             log.warning(f"Skipping {record['pid']} {record['name']}; no location")
             continue
+        append_points(record)
         accumulate(record)
         count += 1
         if args.limit and count >= args.limit:
