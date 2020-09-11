@@ -280,10 +280,21 @@ $(document).ready(function() {
 		   // Un-highlight previous route
 		   if (cur_highlight_route != null) {
 			    cur_highlight_route.setStyle({color: "#6232a8"});
+			    cur_highlight_route.bringToBack();
 		   		old_marker = cur_highlight_route.marker;
+		   		// shuffle it behind other markers
+			    // old_marker.bringToBack();
+			    // absorb it back into a group, if it belongs
 		   		console.log("Re-grouping old marker" + old_marker);
 		   		map.removeLayer(old_marker);
 		   		clusters.addLayer(old_marker);
+		   }
+		   // Re-clicking the same route un-highlights it
+		   if (cur_highlight_route == route) {
+		   		// If clicked again, highlight it again
+		   	    cur_highlight_route = null;
+		   	    // but for now, nothing highlighted
+		   		return;
 		   }
 		   // The marker needs to be showing
 			console.log("Ungrouping highlighted marker " + route.marker);
@@ -294,6 +305,7 @@ $(document).ready(function() {
 			cur_highlight_route = route;
 			cur_highlight_route.bringToFront();
 			cur_highlight_route.setStyle({color: "#FF0000"});
+			cur_highlight_route.bringToFront();
 	   }
 
        function plot_route(points, marker, name) {
