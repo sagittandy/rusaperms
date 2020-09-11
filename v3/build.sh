@@ -17,3 +17,6 @@ do
   python3 leafletgen.py data/${state}.csv html/${state}.html --config ${state}
   echo
 done
+
+echo "Building index"
+python3 indexgen.py --output html/index.html

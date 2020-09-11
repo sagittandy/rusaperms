@@ -14,6 +14,7 @@ import csv
 import argparse
 
 import logging
+
 logging.basicConfig()
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -25,6 +26,7 @@ CSV_SCHEMA = rusa_perms.CSV_SCHEMA + ["lat", "lon"]
 # Maximum deviation from exact route
 # for compressed points lists
 ROUTE_DELTA = 100.0
+
 
 def pull_state(state: str):
     """Pulls data for one state, producing
@@ -96,17 +98,19 @@ def pull_state(state: str):
     log.info(f"{state} {count_new} new GPX files, {count_skipped} kept"
              + f" {count_failed} failed")
 
+
 def gpx_points(gpx_obj):
     """
     Extract all the track points from a gpx object.
     Returns a list of points, each as [lat, lon]
     """
-    li = [ ]
+    li = []
     for track in gpx_obj.tracks:
         for segment in track.segments:
             for point in segment.points:
                 li.append([point.latitude, point.longitude])
     return li
+
 
 def cli() -> object:
     """Command line arguments"""
@@ -115,9 +119,11 @@ def cli() -> object:
     args = parser.parse_args()
     return args
 
+
 def main():
     command = cli()
     pull_state(command.state)
+
 
 if __name__ == "__main__":
     main()
