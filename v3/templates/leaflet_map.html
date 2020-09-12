@@ -275,33 +275,43 @@ $(document).ready(function() {
        // Current "focused route" so we can highlight and
 	   // and unhighlight them to describe routes
 	   var cur_highlight_route = null;
-	   function highlight_route(route) {
-		   marker = route.marker;
-		   // Un-highlight previous route
+
+	   function deselect_route() {
+		   // Un-highlight currently selected route
 		   if (cur_highlight_route != null) {
 			    cur_highlight_route.setStyle({color: "#6232a8"});
 			    cur_highlight_route.bringToBack();
 		   		old_marker = cur_highlight_route.marker;
-		   		// shuffle it behind other markers
-			    // old_marker.bringToBack();
-			    // absorb it back into a group, if it belongs
 		   		console.log("Re-grouping old marker" + old_marker);
 		   		map.removeLayer(old_marker);
 		   		clusters.addLayer(old_marker);
 		   }
-		   // Re-clicking the same route un-highlights it
+	   }
+
+	   function toggle_route(route) {
+		   deselect_route();
+		   // Make possible to re-click it
 		   if (cur_highlight_route == route) {
-		   		// If clicked again, highlight it again
-		   	    cur_highlight_route = null;
-		   	    // but for now, nothing highlighted
+		   		cur_highlight_route = null;
 		   		return;
 		   }
+		   // If it's a different route, select it
+		   select_route(route);
+		   // Also open the marker popup
+		   marker = route.marker;
 		   // The marker needs to be showing
-			console.log("Ungrouping highlighted marker " + route.marker);
-			clusters.removeLayer(route.marker);
-			map.addLayer(marker);
-			// Now it should be showing
-			marker.openPopup(); // Only if marker showing
+		   console.log("Ungrouping highlighted marker " + route.marker);
+		   clusters.removeLayer(route.marker);
+		   map.addLayer(marker);
+		   // Now it should be showing, and can be opened
+		   marker.openPopup();
+	   }
+
+	   // Select route may be called when the route is
+	   // clicked directly, or indirectly selected when
+	   // a corresponding marker is clicked.
+	   function select_route(route) {
+	   		// Highlight it and move to front
 			cur_highlight_route = route;
 			cur_highlight_route.bringToFront();
 			cur_highlight_route.setStyle({color: "#FF0000"});
@@ -309,18 +319,17 @@ $(document).ready(function() {
 	   }
 
        function plot_route(points, marker, name) {
-       	 var route = L.polyline(points,
+	   		var route = L.polyline(points,
 		            { color: "#6232a8", weight: 3, opacity: 0.5} );
-		              route.on('click',
-		              function(e) {
-		                console.log('clicked on ' + name);
-					    highlight_route(route);
-		              });
-		        route.addTo(map);
-		        // route and marker linked so they can
-		   		// highlight each other
-		   		route.marker = marker;
-		   		marker.route = route;
+		  	route.on('click', function(e) {
+				console.log('clicked on ' + name);
+				toggle_route(route);
+		  		});
+			route.addTo(map);
+			// route and marker linked so they can
+			// highlight each other
+			route.marker = marker;
+			marker.route = route;
 	   }
 
 //  End of boilerplate prolog; what follows is
@@ -335,18 +344,20 @@ var permview = "http://www.rusa.org/cgi-bin/permview_GF.pl";
 // -------------------
 
 {% for marker in individual_markers %}
-var marker = L.marker([{{marker.lat}}, {{marker.lon}}],
-  {title: "{{marker.name |escape}}",
-   alt: "{{marker.name |escape}}",
-   icon: icon{{marker.Dist_group}},
-   count: 1}).bindPopup(
-   "<div><p> #{{marker.pid}} " +
-   "<a href='{{marker.url}}'>" +
-   "{{marker.name |escape}}</a><br /> {{marker.dist}}km<br /> " +
-   {% if list_states %}
-     "[{{marker.Perm_states}}] " +
-   {% endif %}
-   "{{marker.description |escape}}</p></div>");
+var marker = L.marker(
+		[{{marker.lat}}, {{marker.lon}}],
+		{	title: "{{marker.name |escape}}",
+		 	alt: "{{marker.name |escape}}",
+		   	icon: icon{{marker.Dist_group}},
+		   	count: 1})
+	.bindPopup(
+	   "<div><p> #{{marker.pid}} " +
+	   "<a href='{{marker.url}}'>" +
+	   "{{marker.name |escape}}</a><br /> {{marker.dist}}km<br /> " +
+	   {% if list_states %}
+		 	"[{{marker.Perm_states}}] " +
+	   {% endif %}
+	   		"{{marker.description |escape}}</p></div>");
 groups.br{{marker.Dist_group}}.push(marker);
 // Points associated with that route
 	var points = {{marker.points}};
