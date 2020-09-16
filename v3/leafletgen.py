@@ -182,7 +182,7 @@ def main():
 
     env["individual_markers"] = individual_markers
     env["grouped_markers"] = grouped_markers 
-    render_template("leaflet_map.html", env, args.output)
+    render_template("leaflet_map.html.jinja2", env, args.output)
     log.info("{} perms generated on {}".format(count, args.output.name))
 
 if __name__ == "__main__":
