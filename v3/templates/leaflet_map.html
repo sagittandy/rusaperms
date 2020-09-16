@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 	
 	<title>{{page_title}}</title>
@@ -227,178 +227,221 @@ $(document).ready(function() {
 <div id="mapid" class="sidebar-map"></div>
 <script>
 
-	var map = L.map('mapid').setView([{{lat}},{{lon}}], {{zoom}});
+var map = L.map('mapid').setView([{{lat}},{{lon}}], {{zoom}});
+
+L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw', {
+maxZoom: 18,
+attribution: 'Map data &copy;' +
+	'<a href="http://openstreetmap.org">' +
+	'OpenStreetMap</a> contributors, ' +
+	'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+	'Imagery © <a href="http://mapbox.com">Mapbox</a>' +
+	'Routes from Ride With GPS',
+	id: 'mapbox.streets'
+}).addTo(map);
 
 
-	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw', {
-		maxZoom: 18,
-		attribution: 'Map data &copy;' +
-                        '<a href="http://openstreetmap.org">' + 
-		        'OpenStreetMap</a> contributors, ' +
-			'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-			'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-		id: 'mapbox.streets'
-	}).addTo(map);
+L.MakiMarkers.accessToken = "pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw";
 
 
-        L.MakiMarkers.accessToken = "pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw";
+var icon100 = L.MakiMarkers.icon({icon: "bicycle",
+								 color: "#E9FF0E",
+								 size: "m"});
+
+var icon200 = L.MakiMarkers.icon({icon: "bicycle",
+								 color: "#36D610",
+								 size: "m"});
+
+var icon300 = L.MakiMarkers.icon({icon: "bicycle",
+								 color: "#56D6FF",
+								 size: "m"});
+
+var icon400 = L.MakiMarkers.icon({icon: "bicycle",
+								 color: "#757EFF",
+								 size: "m"});
+
+var icon600 = L.MakiMarkers.icon({icon: "bicycle",
+								 color: "#FD8F73",
+								 size: "m"});
+
+var icon1000 = L.MakiMarkers.icon({icon: "bicycle",
+								 color: "#FC5655",
+								 size: "m"});
+
+var icon1200 = L.MakiMarkers.icon({icon: "bicycle",
+								 color: "#D930FF",
+								 size: "m"});
+
+var iconSelection = L.MakiMarkers.icon(
+	{ icon: "bicycle",
+	  color: "#000000",
+	  size: "l"});
+
+       // Variables we reuse for each route ...
+var route;  		// For the polyline
+var marker; 		// For the marker with its popup description
+var points = [];	// Points from which we construction the route
+var route_desc;     // Text to place in popup
+// A roving marker for popping information on the
+// currently selected route.  Its attributes will
+// be updated each time a selection is made.
+var selection_marker = L.circleMarker(
+		[{{lat}}, {{lon}}],
+		{ radius: 10,
+		  opacity: 0.5,
+		  fillcolor: "#D0D0D0"
+		}
+);
+selection_marker.bindPopup("<div>Placeholder</div>");
+selection_marker.is_on_map = false;
+
+function mark_selection(marker) {
+	// Instead of opening a popup on the actual route
+	// start marker, which might be hidden, we move
+	// the selection marker to the same location and
+	// pop it.
+	if (! selection_marker.is_on_map) {
+		selection_marker.addTo(map);
+		selection_marker.is_on_map = true;
+		selection_marker.zIndexOffset = -1000;
+	}
+	latlng = marker.getLatLng();
+	selection_marker.setLatLng(latlng);
+	let popup = selection_marker.getPopup();
+	popup.setLatLng(latlng);
+	popup.setContent(marker.route_desc);
+	selection_marker.openPopup(latlng);
+	// FIXME: Moving selection marker down is not working!
+	selection_marker.zIndexOffset = -1000;
+}
+
+// Current "focused route" so we can highlight and
+// and unhighlight them to describe routes
+var cur_highlight_route = null;
 
 
-       var icon100 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#E9FF0E",
-                                         size: "m"});
+function toggle_route(route) {
+   if (cur_highlight_route == route) {
+		deselect_route();
+		return;
+   }
+   // If it's a different route, select it
+   deselect_route();
+   select_route(route);
+   }
 
-       var icon200 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#36D610",
-                                         size: "m"});
+function deselect_route() {
+   // Un-highlight currently selected route.
+   // Sending it to back makes it easy to cycle
+   // through different routes that overlap
+   console.log("Deselecting ... ");
+   if (cur_highlight_route != null) {
+		console.log("Deselected route is " + cur_highlight_route.title);
+		cur_highlight_route.setStyle(
+				{ color: "#6232a8",
+				  weight: 3,
+				  opacity: 0.5
+				});
+		cur_highlight_route.bringToBack();
+		cur_highlight_route = null;
+   }
+   // When route is deselected, its popup closes
+   if (selection_marker.isPopupOpen()) {
+		selection_marker.closePopup();
+   }
+}
 
-       var icon300 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#56D6FF",
-                                         size: "m"});
+// Select route may be called when the route is
+// clicked directly, or indirectly selected when
+// a corresponding marker is clicked.
+function select_route(route) {
+	console.log("Select route " + route.title);
+	// Highlight it and move to front
+	cur_highlight_route = route;
+	cur_highlight_route.setStyle(
+			{color: "#FF0000",
+			 opacity: 0.85,
+			 weight: 5});
+	cur_highlight_route.bringToFront();
+	// Open corresponding marker
+	mark_selection(cur_highlight_route.marker);
+}
 
-       var icon400 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#757EFF",
-                                         size: "m"});
-
-       var icon600 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#FD8F73",
-                                         size: "m"});
-
-       var icon1000 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#FC5655",
-                                         size: "m"});
-
-       var icon1200 = L.MakiMarkers.icon({icon: "bicycle",
-                                         color: "#D930FF",
-                                         size: "m"});
-
-       // Current "focused route" so we can highlight and
-	   // and unhighlight them to describe routes
-	   var cur_highlight_route = null;
-
-	   function deselect_route() {
-		   // Un-highlight currently selected route
-		   if (cur_highlight_route != null) {
-			    cur_highlight_route.setStyle({color: "#6232a8"});
-			    cur_highlight_route.bringToBack();
-		   		old_marker = cur_highlight_route.marker;
-		   		console.log("Re-grouping old marker" + old_marker);
-		   		map.removeLayer(old_marker);
-		   		clusters.addLayer(old_marker);
-		   }
-	   }
-
-	   function toggle_route(route) {
-		   deselect_route();
-		   // Make possible to re-click it
-		   if (cur_highlight_route == route) {
-		   		cur_highlight_route = null;
-		   		return;
-		   }
-		   // If it's a different route, select it
-		   select_route(route);
-		   // Also open the marker popup
-		   marker = route.marker;
-		   // The marker needs to be showing
-		   console.log("Ungrouping highlighted marker " + route.marker);
-		   clusters.removeLayer(route.marker);
-		   map.addLayer(marker);
-		   // Now it should be showing, and can be opened
-		   marker.openPopup();
-	   }
-
-	   // Select route may be called when the route is
-	   // clicked directly, or indirectly selected when
-	   // a corresponding marker is clicked.
-	   function select_route(route) {
-	   		// Highlight it and move to front
-			cur_highlight_route = route;
-			cur_highlight_route.bringToFront();
-			cur_highlight_route.setStyle({color: "#FF0000"});
-			cur_highlight_route.bringToFront();
-	   }
-
-       function plot_route(points, marker, name) {
-	   		var route = L.polyline(points,
-		            { color: "#6232a8", weight: 3, opacity: 0.5} );
-		  	route.on('click', function(e) {
-				console.log('clicked on ' + name);
-				toggle_route(route);
-		  		});
-			route.addTo(map);
-			// route and marker linked so they can
-			// highlight each other
-			route.marker = marker;
-			marker.route = route;
-	   }
-
-//  End of boilerplate prolog; what follows is
-//     inserted marker-by-marker in Python script 
-
-// Now in Jinja!
-
-var permview = "http://www.rusa.org/cgi-bin/permview_GF.pl";
+function plot_route(points, marker, name) {
+	console.log("Plotting route for " + name);
+	// Returns polyline object
+	let route = L.polyline(points,
+			{ color: "#6232a8",
+				weight: 4,
+				opacity: 0.5
+			} );
+	route.title = name;
+	route.marker = marker;
+	route.on('click', function(e) {
+		console.log('clicked on route' + name);
+		toggle_route(route);
+		});
+	route.addTo(map);
+	return route;
+}
 
 // -------------------
 //  Individual markers 
 // -------------------
 
+
+
 {% for marker in individual_markers %}
-var marker = L.marker(
-		[{{marker.lat}}, {{marker.lon}}],
-		{	title: "{{marker.name |escape}}",
-		 	alt: "{{marker.name |escape}}",
-		   	icon: icon{{marker.Dist_group}},
-		   	count: 1})
-	.bindPopup(
-	   "<div><p> #{{marker.pid}} " +
-	   "<a href='{{marker.url}}'>" +
+route_desc = "<div><p> #{{marker.pid}} " +
+	   "<a href='{{marker.url}}' target='_blank'>" +
 	   "{{marker.name |escape}}</a><br /> {{marker.dist}}km<br /> " +
 	   {% if list_states %}
 		 	"[{{marker.Perm_states}}] " +
 	   {% endif %}
-	   		"{{marker.description |escape}}</p></div>");
+	   "{{marker.description |escape}}</p></div>";
+
+marker = L.marker(
+	[{{marker.lat}}, {{marker.lon}}],
+	 {	title: "{{marker.name |escape}}",
+		alt: "{{marker.name |escape}}",
+		icon: icon{{marker.Dist_group}},
+		count: 1}
+	);
+marker.route_desc = route_desc;
 groups.br{{marker.Dist_group}}.push(marker);
+
+
 // Points associated with that route
-	var points = {{marker.points}};
-	plot_route(points, marker, "{{marker.pid}} {{marker.name}}");
+points = {{marker.points}};
+marker.route = plot_route(points, marker,
+		"{{marker.pid}} {{marker.name}}");
+
+marker.on('click', function (e) {
+	var this_marker = e.target;
+	console.log("Click on " + this_marker.title);
+	let route = this_marker.route;
+	console.log("Marker.route is " + route.title);
+	if (cur_highlight_route == route) {
+		console.log("Route is already selected");
+	} else {
+		console.log("Selecting route in response to popup open");
+		deselect_route();  // Old selection, if any
+		select_route(this_marker.route);
+	}
+});
 {% endfor %}
 
-// -------------------
-//  Grouped markers 
-// -------------------
-
-{% for marker in grouped_markers %}
-var label = "{{marker.count}} "+
-    "{{marker.Dist_group}}k - {{marker.Next_bigger}}k perms from {{marker.City}}";
-var marker = L.marker([{{marker.Lat}}, {{marker.Lon}}],
- { title: label, 
-   alt: label, 
-   icon: icon{{marker.Dist_group}},
-   count: {{marker.count}}}).bindPopup( "<div class='ride-group'>" + label + "<br />" +
-   {% for perm in marker.perms %}  "#<strong>{{perm.Perm_id}}</strong> " + 
-   " <a href='" + permview + "?permid={{perm.Perm_id}}'" + 
-   "  target='RUSAdb'>{{perm.Perm_name | escape}}</a> " +
-   " ({{perm.Perm_km}}km) " +
-   {% if list_states %}
-     "[{{perm.Perm_states}}] " +
-   {% endif %}
-   " {{perm.Perm_notes | escape}}- {{perm.Perm_owner | escape}} <br />" +
-   {% endfor %} "</div>"   
-  );
-groups.br{{marker.Dist_group}}.push(marker);   
-{% endfor %}
 
 // -------------------
 //  End of markers 
 // -------------------
 
-     map.addLayer(clusters);
-     installMarkers();  
+map.addLayer(clusters);
+installMarkers();
 
-    {% if sidebar %}
-    var sidebar = L.control.sidebar('sidebar').addTo(map);
-    {% endif %}
+{% if sidebar %}
+var sidebar = L.control.sidebar('sidebar').addTo(map);
+{% endif %}
 </script>
 </body>
 </html>
