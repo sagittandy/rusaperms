@@ -21,7 +21,14 @@ module.exports = {
         use: [
             'file-loader',
         ]
-      }
+      },
+      {
+        test: require.resolve('jquery'),
+        loader: 'expose-loader',
+        options: {
+          exposes: ['$', 'jQuery'],
+        },
+      },
     ]
-  }
+  },
 };
