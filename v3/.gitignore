@@ -1,3 +1,6 @@
 html/*.html
 bak
 data/*
+**/node_modules
+**/dist/*
+
