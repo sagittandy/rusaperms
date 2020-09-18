@@ -16,9 +16,6 @@
         src="static/js/dist/main.js">
     </script>
 
-        <!-- Maki Marker (marker icons) -->
-        <script src="static/js/Leaflet.MakiMarkers.js"></script>
-
      <!-- Font-Awesome is currently used only in the sidebar,
            but that could change. -->
       <link
@@ -164,7 +161,7 @@ var clusters = L.markerClusterGroup(
 // Just the markers that have been selected in the
 // sidebar, which initially is all of them
 function installMarkers() {
-   var options = $(".length_select");
+   var options = jQuery(".length_select");
    for (var i=0; i<options.length; ++i) {
 	 group= options[i].id;
 	 console.log("Adding " + group);
@@ -203,9 +200,6 @@ $(document).ready(function() {
      })
   });
 
-
-
-
 </script>
 
 
@@ -229,41 +223,87 @@ attribution: 'Map data &copy;' +
 }).addTo(map);
 
 
-L.MakiMarkers.accessToken = "pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw";
+var icon100 = L.icon({
+    iconUrl: 'static/img/bicycle-icon-100.png',
+    shadowUrl: 'static/img/bicycle-shadow.png',
+    iconSize: [24, 32],
+    shadowSize: [25, 32],
+    iconAnchor: [12, 32],
+    shadowAnchor: [12, 32],
+    popupAnchor: [-12, 15]
+})
 
+var icon200 = L.icon({
+    iconUrl: 'static/img/bicycle-icon-200.png',
+    shadowUrl: 'static/img/bicycle-shadow.png',
+    iconSize: [24, 32],
+    shadowSize: [25, 32],
+    iconAnchor: [12, 32],
+    shadowAnchor: [12, 32],
+    popupAnchor: [-12, 15]
+})
 
-var icon100 = L.MakiMarkers.icon({icon: "bicycle",
-								 color: "#E9FF0E",
-								 size: "m"});
+var icon300 = L.icon({
+    iconUrl: 'static/img/bicycle-icon-300.png',
+    shadowUrl: 'static/img/bicycle-shadow.png',
+    iconSize: [24, 32],
+    shadowSize: [25, 32],
+    iconAnchor: [12, 32],
+    shadowAnchor: [12, 32],
+    popupAnchor: [-12, 15]
+})
 
-var icon200 = L.MakiMarkers.icon({icon: "bicycle",
-								 color: "#36D610",
-								 size: "m"});
+var icon400 = L.icon({
+    iconUrl: 'static/img/bicycle-icon-400.png',
+    shadowUrl: 'static/img/bicycle-shadow.png',
+    iconSize: [24, 32],
+    shadowSize: [25, 32],
+    iconAnchor: [12, 32],
+    shadowAnchor: [12, 32],
+    popupAnchor: [-12, 15]
+})
 
-var icon300 = L.MakiMarkers.icon({icon: "bicycle",
-								 color: "#56D6FF",
-								 size: "m"});
+var icon600 = L.icon({
+    iconUrl: 'static/img/bicycle-icon-600.png',
+    shadowUrl: 'static/img/bicycle-shadow.png',
+    iconSize: [24, 32],
+    shadowSize: [25, 32],
+    iconAnchor: [12, 32],
+    shadowAnchor: [12, 32],
+    popupAnchor: [-12, 15]
+})
 
-var icon400 = L.MakiMarkers.icon({icon: "bicycle",
-								 color: "#757EFF",
-								 size: "m"});
+var icon1000 = L.icon({
+    iconUrl: 'static/img/bicycle-icon-1000.png',
+    shadowUrl: 'static/img/bicycle-shadow.png',
+    iconSize: [24, 32],
+    shadowSize: [25, 32],
+    iconAnchor: [12, 32],
+    shadowAnchor: [12, 32],
+    popupAnchor: [-12, 15]
+})
 
-var icon600 = L.MakiMarkers.icon({icon: "bicycle",
-								 color: "#FD8F73",
-								 size: "m"});
+var icon1200 = L.icon({
+    iconUrl: 'static/img/bicycle-icon-1200.png',
+    shadowUrl: 'static/img/bicycle-shadow.png',
+    iconSize: [24, 32],
+    shadowSize: [25, 32],
+    iconAnchor: [12, 32],
+    shadowAnchor: [12, 32],
+    popupAnchor: [-12, 15]
+})
 
-var icon1000 = L.MakiMarkers.icon({icon: "bicycle",
-								 color: "#FC5655",
-								 size: "m"});
+<!-- Is this used? -->
+var iconSelection= L.icon({
+    iconUrl: 'static/img/bicycle-icon.png',
+    shadowUrl: 'static/img/bicycle-shadow.png',
+    iconSize: [24, 32],
+    shadowSize: [25, 32],
+    iconAnchor: [12, 32],
+    shadowAnchor: [12, 32],
+    popupAnchor: [-12, 15]
+})
 
-var icon1200 = L.MakiMarkers.icon({icon: "bicycle",
-								 color: "#D930FF",
-								 size: "m"});
-
-var iconSelection = L.MakiMarkers.icon(
-	{ icon: "bicycle",
-	  color: "#000000",
-	  size: "l"});
 
        // Variables we reuse for each route ...
 var route;  		// For the polyline
