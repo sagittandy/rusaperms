@@ -161,43 +161,57 @@ var clusters = L.markerClusterGroup(
 // Just the markers that have been selected in the
 // sidebar, which initially is all of them
 function installMarkers() {
-   var options = jQuery(".length_select");
-   for (var i=0; i<options.length; ++i) {
-	 group= options[i].id;
-	 console.log("Adding " + group);
-	 if (options[i].checked) {
-		clusters.addLayers(groups[group]);
-	 }
-   }
+    console.log("installMarkers, with sidebar");
+    var options = jQuery(".length_select");
+    for (var i = 0; i < options.length; ++i) {
+        group = options[i].id;
+        console.log("Checking checkbox for " + group);
+        if (options[i].checked) {
+            console.log(i + " is checked: " + options[i].checked);
+            clusters.addLayers(groups[group]);
+        }
+    }
 }
 {% else %}
 // Markers of every length, since we don't have
 // selections. 	     
 function installMarkers() {
-           for (var i=0; i<groups.lengths.length; ++i) {
-	        group = groups.lengths[i]; 
-	        // console.log("Adding " + group);
-	        // console.log("group content " + groups[group]); 
-	        clusters.addLayers(groups[group]);
-	     }
+    console.log("installMarkers, without sidebar");
+    for (var i=0; i<groups.lengths.length; ++i) {
+        group = groups.lengths[i];
+        console.log("installMarkers adding " + group);
+        console.log("group content " + groups[group]);
+        clusters.addLayers(groups[group]);
+ }
 }
 {% endif %}	     
 
-	     
+// Install just the markers for selected
+// distances
+ function select_checked_markers(event) {
+     console.log("select_checked_markers");
+     checkbox = event.currentTarget;
+     // if (checkbox.prop("checked")) { //FIXME: It's not .prop
+     if (checkbox.checked) {
+         var length = checkbox.getAttribute("id");
+         console.log("select_checked_markers: " + length + " checked!");
+         clusters.addLayers(groups[length])
+         console.log(length + " is checked!");
+   } else {
+       clusters.clearLayers();
+       installMarkers();
+   }
+   clusters.refreshClusters();
+ }
 
-$(document).ready(function() {
-  $('input[class="length_select"]').change(
-     function() {
-        if ($(this).prop("checked")) {
-           var length = $(this).prop("id");
-           clusters.addLayers(groups[length])
-           console.log(length + " is checked!");
-       } else {
-           clusters.clearLayers();
-           installMarkers(); 
-       }
-       clusters.refreshClusters();
-     })
+
+window.addEventListener("load",
+  function(event) {
+    console.log("Dom content is loaded");
+    brevet_selections = document.querySelectorAll('input[class="length_select"]');
+    for (checkbox of brevet_selections) {
+        checkbox.addEventListener("change", select_checked_markers);
+    }
   });
 
 </script>
@@ -339,7 +353,6 @@ function mark_selection(marker) {
 	popup.setLatLng(latlng);
 	popup.setContent(marker.route_desc);
 	selection_marker.openPopup(latlng);
-	// FIXME: Moving selection marker down is not working!
 	selection_marker.zIndexOffset = -1000;
 }
 

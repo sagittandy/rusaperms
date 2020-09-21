@@ -181,7 +181,8 @@ def main():
     flush()
 
     env["individual_markers"] = individual_markers
-    env["grouped_markers"] = grouped_markers 
+    env["grouped_markers"] = grouped_markers ## NOT IN USE!
+    env["sidebar"] = True;
     render_template("leaflet_map.html.jinja2", env, args.output)
     log.info("{} perms generated on {}".format(count, args.output.name))
 
