@@ -91,52 +91,58 @@ html, body, #mapid {
      ******************************************* -->
 <div id="sidebar" class="sidebar collapsed">
 
-        <!-- Nav tabs -->
-        <div class="sidebar-tabs">
-            <ul role="tablist">
-                <li><a href="#choose" role="tab">
-	      <i class="fa fa-cogs"></i> 
-	      </a></li>
-            </ul>
-        </div> <!-- sidebar-tabs --> 
+    <!-- Nav tabs -->
+    <div class="sidebar-tabs">
+        <ul role="tablist">
+            <li><a href="#choose" role="tab">
+      <i class="fa fa-cogs"></i>
+      </a></li>
+        </ul>
+    </div> <!-- sidebar-tabs -->
 
-        <!-- Tab panes -->
-        <div class="sidebar-content">
-            <div class="sidebar-pane" id="choose">
-                <h1 class="sidebar-header">
-                    {{page_title}}
-                    <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
-                </h1>
-	      <p>Show permanents of length ...</p>
-	      <form>
-	        <input type="checkbox" class="length_select" id="br100" checked>
-	           100k - 199k</input><br />
-	        <input type="checkbox" class="length_select" id="br200" checked>
-	           200k - 299k</input><br />
-	        <input type="checkbox" class="length_select" id="br300" checked>
-	           300k - 399k</input><br />
-	        <input type="checkbox" class="length_select" id="br400" checked>
-	           400k - 599k</input><br />
-	        <input type="checkbox" class="length_select" id="br600" checked>
-	           600k - 999k</input><br />
-	        <input type="checkbox" class="length_select" id="br1000" checked>
-	           1000k - 1199k</input><br />
-	        <input type="checkbox" class="length_select" id="br1200" checked>
-	           1200k + </input><br />
-	      </form>
+    <!-- Tab panes -->
+    <div class="sidebar-content">
+        <div class="sidebar-pane" id="choose">
+            <h1 class="sidebar-header">
+                {{page_title}}
+                <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+            </h1>
+      <p>Show permanents of length ...</p>
+      <form>
+        <input type="checkbox" class="length_select" id="br100" checked>
+          <label for="br100">100k - 199k</label> </input><br />
+        <input type="checkbox" class="length_select" id="br200" checked>
+          <label for="br200">200k - 299k</label></input><br />
+        <input type="checkbox" class="length_select" id="br300" checked>
+          <label for="br300">300k - 399k</label></input><br />
+        <input type="checkbox" class="length_select" id="br400" checked>
+          <label for="br400">400k - 599k</label></input><br />
+        <input type="checkbox" class="length_select" id="br600" checked>
+          <label for="br600">600k - 999k</label></input><br />
+        <input type="checkbox" class="length_select" id="br1000" checked>
+          <label for="br1000">1000k - 1199k</label></input><br />
+        <input type="checkbox" class="length_select" id="br1200" checked>
+          <label for="br1200">1200k + </label></input><br />
+      </form>
 
-	      <p><a href="{{sidebar_link_href}}">{{sidebar_link_name}}</a></p>
-            </div> <!-- Sidebar pane -->
-        </div> <!-- sidebar-content --> 
+      <p><a href="{{sidebar_link_href}}">{{sidebar_link_name}}</a></p>
+      </div> <!-- Sidebar pane -->
+    </div> <!-- sidebar-content -->
 </div> <!-- sidebar -->
 {% endif %}
 
+<!-- *******************************************
+      The Map Itself
+     ******************************************* -->
+<div id="mapid" class="sidebar-map"></div>
 <!-- We keep the groups of markers whether or not there is a sidebar,
      so that code declaring a marker is the same either way.
      The installMarkers function varies between installing all groups
      or installing groups that correspond to marked options.
 -->
 <script>
+var map = L.map('mapid').setView([{{lat}},{{lon}}], {{zoom}});
+
 var groups = {
   // For iterating through the groups ... 
   lengths: [ 'br100', 'br200', 'br300', 'br400',
@@ -151,11 +157,45 @@ var groups = {
   br1200 : [ ]
 };
 
+// routes are parallel to groups --- for each marker in
+// groups[groupname], there is a corresponding route polyline
+// in routes[groupname]
+var routes = {
+  // Each route is added to one group when it is created
+  br100 : [ ],
+  br200 : [ ],
+  br300 : [ ],
+  br400 : [ ],
+  br600 : [ ],
+  br1000 : [ ],
+  br1200 : [ ]
+};
+
 
 var clusters = L.markerClusterGroup(
                 { iconCreateFunction: customIcon,
                   disableClusteringAtZoom: 15
                 });
+
+function installRouteGroup(rgroup) {
+    console.log("Installing route group");
+    for (var i=0; i < rgroup.length; ++i) {
+        rgroup[i].addTo(map);
+    }
+}
+
+function clearRoutes() {
+    // To coordinate with markers, we need to erase
+    // all the routes, and then add back selectively
+    for (var gi=0; gi<groups.lengths.length; ++gi) {
+        length_group = groups.lengths[gi];
+        route_group = routes[length_group];
+        for (var ri=0; ri < route_group.length; ++ri) {
+            console.log("Removing route " + route_group[ri])
+            route_group[ri].removeFrom(map);
+        }
+    }
+}
 
 {% if sidebar %}
 // Just the markers that have been selected in the
@@ -169,6 +209,7 @@ function installMarkers() {
         if (options[i].checked) {
             console.log(i + " is checked: " + options[i].checked);
             clusters.addLayers(groups[group]);
+            installRouteGroup(routes[group]);
         }
     }
 }
@@ -182,6 +223,7 @@ function installMarkers() {
         console.log("installMarkers adding " + group);
         console.log("group content " + groups[group]);
         clusters.addLayers(groups[group]);
+        installRouteGroup(routes[group]);
  }
 }
 {% endif %}	     
@@ -191,16 +233,17 @@ function installMarkers() {
  function select_checked_markers(event) {
      console.log("select_checked_markers");
      checkbox = event.currentTarget;
-     // if (checkbox.prop("checked")) { //FIXME: It's not .prop
      if (checkbox.checked) {
          var length = checkbox.getAttribute("id");
          console.log("select_checked_markers: " + length + " checked!");
-         clusters.addLayers(groups[length])
+         clusters.addLayers(groups[length]);
+         installRouteGroup(routes[length]);
          console.log(length + " is checked!");
-   } else {
+    } else {
        clusters.clearLayers();
+       clearRoutes();
        installMarkers();
-   }
+    }
    clusters.refreshClusters();
  }
 
@@ -212,18 +255,15 @@ window.addEventListener("load",
     for (checkbox of brevet_selections) {
         checkbox.addEventListener("change", select_checked_markers);
     }
+    console.log("Event listeners installed");
   });
 
 </script>
 
 
 
-<!-- *******************************************
-     ******************************************* -->
-<div id="mapid" class="sidebar-map"></div>
-<script>
 
-var map = L.map('mapid').setView([{{lat}},{{lon}}], {{zoom}});
+<script>
 
 L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWljaGFseW91bmciLCJhIjoiY2l3c2xxY3gwMDA0NTJ1cXJsZW5yZDk5NSJ9.IWl2i9omf-ATaiGSNA7STw', {
 maxZoom: 18,
@@ -319,7 +359,7 @@ var iconSelection= L.icon({
 })
 
 
-       // Variables we reuse for each route ...
+// Variables we reuse for each route ...
 var route;  		// For the polyline
 var marker; 		// For the marker with its popup description
 var points = [];	// Points from which we construction the route
@@ -422,15 +462,13 @@ function plot_route(points, marker, name) {
 		console.log('clicked on route' + name);
 		toggle_route(route);
 		});
-	route.addTo(map);
+	//  route.addTo(map); // only when visible
 	return route;
 }
 
 // -------------------
 //  Individual markers 
 // -------------------
-
-
 
 {% for marker in individual_markers %}
 route_desc = "<div><p> #{{marker.pid}} " +
@@ -456,6 +494,7 @@ groups.br{{marker.Dist_group}}.push(marker);
 points = {{marker.points}};
 marker.route = plot_route(points, marker,
 		"{{marker.pid}} {{marker.name}}");
+routes.br{{marker.Dist_group}}.push(marker.route);
 
 marker.on('click', function (e) {
 	var this_marker = e.target;
@@ -478,7 +517,9 @@ marker.on('click', function (e) {
 // -------------------
 
 map.addLayer(clusters);
+console.log("Calling installMarkers at end of page");
 installMarkers();
+console.log("Intial installMarkers done");
 
 {% if sidebar %}
 var sidebar = L.control.sidebar('sidebar').addTo(map);
